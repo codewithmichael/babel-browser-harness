@@ -15,8 +15,6 @@ MIT License
 
       <!-- YOUR CODE HERE -->
       <script type="text/babel">
-        'use strict';
-
         var element, message, hasReact
 
         element = document.getElementById("app")
@@ -62,11 +60,12 @@ MIT License
               };
 
           //-[ Execute ]-*
-          [].slice.call(document.querySelectorAll('script[type="text/babel"]') || [])
-            .map(extract)
-            .map(transform)
-            .map(build)
-            .map(run)
+          Promise
+            .all([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
+            .then(function(_) { return Promise.all(_.map(extract)) })
+            .then(function(_) { return Promise.all(_.map(transform)) })
+            .then(function(_) { return Promise.all(_.map(build)) })
+            .then(function(_) { return Promise.all(_.map(run)) })
 
           function extract(element) { return element.textContent }
           function transform(script) { return Babel.transform(script, config).code }
