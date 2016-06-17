@@ -1,0 +1,79 @@
+<!--
+Babel Browser Harness (BBH)
+In-browser CDN-based ECMAScript transpiling via Babel (and commonly used libs)
+Copyright (c) 2016, Michael Spencer
+MIT License
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Babel Browser Harness</title>
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- YOUR CODE HERE -->
+      <script type="text/babel">
+        'use strict';
+
+        var element, message, hasReact
+
+        element = document.getElementById("app")
+        hasReact = typeof React !== 'undefined' && typeof ReactDOM !== 'undefined'
+        message = "BBH ♥ Hello"
+
+        if (hasReact) {
+          ReactDOM.render(<div>{ message }</div>, element)
+        } else {
+          element.textContent = message
+        }
+      </script>
+
+
+      <!-- INCLUDES -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js"></script>
+      <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.9.1/polyfill.min.js"></script> -->
+      <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/classnames/2.2.5/index.min.js"></script> -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.js"></script>
+      <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/flux/2.1.1/Flux.js"></script> -->
+      <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.5.2/redux.min.js"></script> -->
+      <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/react-redux/4.4.5/react-redux.min.js"></script> -->
+      <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/5.4.4/pouchdb.js"></script> -->
+
+
+      <!-- TRANSPILER -->
+      <script>
+        (function(){
+          'use strict';
+
+          //-[ Configure ]-*
+          var harnessName = "Babel Browser Harness",
+              config = {
+                presets: [
+                  'es2015',
+                  'react',
+                  // 'stage-0',  // Enable all experimental ECMAScript features
+                ],
+                plugins: [
+                  // 'transform-object-rest-spread',  // Enable object destructuring, i.e. spreading of object rest properties, e.g. let n = { x, y, ...z }
+                ]
+              };
+
+          //-[ Execute ]-*
+          [].slice.call(document.querySelectorAll('script[type="text/babel"]') || [])
+            .map(extract)
+            .map(transform)
+            .map(build)
+            .map(run)
+
+          function extract(element) { return element.textContent }
+          function transform(script) { return Babel.transform(script, config).code }
+          function build(script) { var element = document.createElement('script'); element.textContent = script; return element }
+          function run(element) { document.body.appendChild(element); return element }
+        })()
+      </script>
+    </div>
+  </body>
+</html>
