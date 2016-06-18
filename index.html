@@ -15,19 +15,22 @@ MIT License
 
       <!-- YOUR CODE HERE -->
       <script type="text/babel">
-        var element, message, hasReact
+        import React from 'react'
+        import ReactDOM from 'react-dom'
 
-        element = document.getElementById("app")
-        hasReact = typeof React !== 'undefined' && typeof ReactDOM !== 'undefined'
-        message = "BBH ♥ Hello"
-
-        if (hasReact) {
-          ReactDOM.render(<div>{ message }</div>, element)
-        } else {
-          element.textContent = message
-        }
+        ReactDOM.render(
+          <div>BBH ♥ Hello</div>,
+          document.getElementById("app")
+        )
       </script>
 
+    </div>
+
+
+    <!-- ADVANCED USE ONLY BELOW THIS LINE -->
+
+
+    <div id="__BBH_TRANSPILER__">
 
       <!-- INCLUDES -->
       <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js"></script>
@@ -41,37 +44,66 @@ MIT License
       <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/5.4.4/pouchdb.js"></script> -->
 
 
+      <!-- MAPPING -->
+      <!-- RequireJS must be the last script loaded -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script>
+      <script>
+        [ // Format: import_name, window_variable, [delete_from_window = true]
+          ['babel', 'Babel'],
+          ['classnames', 'classNames'],
+          ['react', 'React'],
+          ['react-dom', 'ReactDOM'],
+          ['flux', 'Flux'],
+          ['redux', 'Redux'],
+          ['react-redux', 'ReactRedux'],
+          ['pouchdb', 'PouchDB'],
+        ]
+        // DO NOT EDIT
+        .forEach(function(_) { if (typeof window[_[1]] !== 'undefined') { (function(name, exported, deleteFromWindow) { define(name, function(require, exports, module) { module.exports = exported }); require([name]); if (deleteFromWindow) { delete window[_[1]]; }})(_[0], window[_[1]], typeof _[2] === 'undefined' || !!_[2]); }});
+      </script>
+
+
       <!-- TRANSPILER -->
       <script>
-        (function(){
-          'use strict';
+        require(['babel'], function(Babel) {
 
-          //-[ Configure ]-*
-          var harnessName = "Babel Browser Harness",
-              config = {
-                presets: [
-                  'es2015',
-                  'react',
-                  // 'stage-0',  // Enable all experimental ECMAScript features
-                ],
-                plugins: [
-                  // 'transform-object-rest-spread',  // Enable object destructuring, i.e. spreading of object rest properties, e.g. let n = { x, y, ...z }
-                ]
-              };
+          // CONFIGURATION
+          var BABEL_CONFIG = {
+            presets: [
+              'es2015',
+              'react',
 
-          //-[ Execute ]-*
-          Promise
-            .all([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
-            .then(function(_) { return Promise.all(_.map(extract)) })
-            .then(function(_) { return Promise.all(_.map(transform)) })
-            .then(function(_) { return Promise.all(_.map(build)) })
-            .then(function(_) { return Promise.all(_.map(run)) })
+              // Enable all experimental ECMAScript features
+              // 'stage-0',
+            ],
+            plugins: [
+              // Enable object destructuring, i.e. spreading of object rest properties, e.g. let n = { x, y, ...z }
+              // 'transform-object-rest-spread',
+            ]
+          };
 
-          function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }) : element.textContent }
-          function transform(script) { return Babel.transform(script, config).code }
+          // EXECUTION
+          Promise.all([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
+            .then(function(_) { return Promise.all(_.map(extractWithName)) })
+            .then(function(_) { return Promise.all(_.map(transformWithName)) })
+            .then(function(_) { return Promise.all(_.map(wrapWithName)) })
+            .then(function(_) { return Promise.all(_.map(buildWithName)) })
+            .then(function(_) { return Promise.all(_.map(runWithName)) })
+
+          function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
+          function transform(script) { return Babel.transform(script, BABEL_CONFIG).code }
+          function wrap(name, script) { return name ? ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" : ";require([], function() {" + script + "\n;});" }
           function build(script) { var element = document.createElement('script'); element.textContent = script; return element }
           function run(element) { document.body.appendChild(element); return element }
-        })()
+
+          function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || null, text] }) }
+          function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
+          function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
+          function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
+          function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
+        });
+
+        document.getElementById('__BBH_TRANSPILER__').remove();
       </script>
     </div>
   </body>
