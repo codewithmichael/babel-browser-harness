@@ -1,5 +1,6 @@
-Babel Browser Harness (BBH)
-===========================
+BBH ♥ Hello
+===========
+
 The Babel Browser Harness (BBH) is a simple CDN-based HTML/JS jig that provides
 in-browser ECMAScript transpiling via Babel.
 
@@ -23,6 +24,19 @@ a simple web server from a terminal in the current directory with the command:
 ```sh
 $ python -m SimpleHTTPServer
 ```
+
+Installation
+------------
+Download the BBH `index.html` file and open it in a web browser.
+
+After a couple of seconds, happiness should appear in your browser:
+```
+BBH ♥ Hello
+```
+
+If it does not, you are running an unsupported and unhappy browser.
+
+*(BBH is primarily developed and tested using up-to-date Google Chrome)*
 
 Libraries + Options
 -------------------
@@ -91,6 +105,7 @@ export function sayHello() {
 ```html
 ...
 <script type="text/babel" src="./greeter.js"></script>
+
 <script type="text/babel">
   import { sayHello } from './greeter.js'
   sayHello()
@@ -106,12 +121,14 @@ packaged modules
 ***Example***
 ```html
 <script type="text/babel" name="./greeter" src="./long/path/to/my_greeter.js"></script>
+
 <script type="text/babel">
   import { sayHello } from './greeter'
   sayHello()
 </script>
 
 <script type="text/babel" name="test-module" src="./node_modules/some_es6_module/index.js"></script>
+
 <script type="text/babel">
   import TestModule from 'test-module'
   TestModule.doSomething()
