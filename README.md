@@ -135,10 +135,6 @@ packaged modules
 </script>
 ```
 
-**CAVEAT:** Circular module dependencies are not presently supported, and
-dependent scripts must be loaded in the correct order. *This is expected to
-change!*
-
 Credits
 -------
 * BBH's transpiling capability is based around [babel-standalone](https://github.com/Daniel15/babel-standalone)

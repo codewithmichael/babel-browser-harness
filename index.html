@@ -1,6 +1,6 @@
 <!--
-Babel Browser Harness (BBH)
-In-browser CDN-based ECMAScript transpiling via Babel (and commonly used libs)
+BBH ♥ Babel Browser Harness
+In-browser CDN-based ECMAScript transpiling via Babel
 Copyright (c) 2016, Michael Spencer
 MIT License
 -->
@@ -13,26 +13,38 @@ MIT License
   <body>
     <div id="app">
 
-      <!-- YOUR CODE HERE -->
-      <script type="text/babel">
-        import React from 'react'
-        import ReactDOM from 'react-dom'
+      <!------------------------>
+      <!-- ♦ YOUR CODE HERE ♦ -->
+      <!------------------------>
 
-        ReactDOM.render(
-          <div>BBH ♥ Hello</div>,
-          document.getElementById("app")
-        )
+      <!-- Example (using React) -->
+      <script type="text/babel" name="react-example">
+        import React from 'react'
+        import { render } from 'react-dom'
+        import { message, element as target } from './bbh-welcome'
+
+        render(<div>{ message }</div>, target)
+      </script>
+
+      <!-- Example Module -->
+      <script type="text/babel" name="./bbh-welcome">
+        export const message = "BBH ♥ Hello"
+        export const element = document.getElementById('app')
       </script>
 
     </div>
 
 
-    <!-- ADVANCED USE ONLY BELOW THIS LINE -->
-
+    <!--------------------------->
+    <!-- BBH ♥ BELOW THIS LINE -->
+    <!--------------------------->
 
     <div id="__BBH_TRANSPILER__">
 
-      <!-- INCLUDES -->
+      <!------------------>
+      <!-- ♥ INCLUDES ♥ -->
+      <!------------------>
+
       <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js"></script>
       <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.9.1/polyfill.min.js"></script> -->
       <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/classnames/2.2.5/index.min.js"></script> -->
@@ -43,8 +55,10 @@ MIT License
       <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/react-redux/4.4.5/react-redux.min.js"></script> -->
       <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/5.4.4/pouchdb.js"></script> -->
 
+      <!----------------->
+      <!-- ♥ MAPPING ♥ -->
+      <!----------------->
 
-      <!-- MAPPING -->
       <!-- RequireJS must be the last script loaded -->
       <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script>
       <script>
@@ -63,11 +77,17 @@ MIT License
       </script>
 
 
-      <!-- TRANSPILER -->
+      <!-------------------->
+      <!-- ♥ TRANSPILER ♥ -->
+      <!-------------------->
+
       <script>
         require(['babel'], function(Babel) {
 
-          // CONFIGURATION
+          //------------------
+          // ♥ CONFIGURATION ♥
+          //------------------
+
           var BABEL_CONFIG = {
             presets: [
               'es2015',
@@ -82,7 +102,11 @@ MIT License
             ]
           };
 
-          // EXECUTION
+          //--------------
+          // ♥ EXECUTION ♥
+          //--------------
+
+          var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0
           Promise.all([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
             .then(function(_) { return Promise.all(_.map(extractWithName)) })
             .then(function(_) { return Promise.all(_.map(transformWithName)) })
@@ -92,17 +116,18 @@ MIT License
 
           function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
           function transform(script) { return Babel.transform(script, BABEL_CONFIG).code }
-          function wrap(name, script) { return name ? ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" : ";require([], function() {" + script + "\n;});" }
+          function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
           function build(script) { var element = document.createElement('script'); element.textContent = script; return element }
           function run(element) { document.body.appendChild(element); return element }
 
-          function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || null, text] }) }
+          function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
           function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
           function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
           function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
           function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
         });
 
+        // Remove BBH from the DOM
         document.getElementById('__BBH_TRANSPILER__').remove();
       </script>
     </div>
