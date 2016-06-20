@@ -74,8 +74,10 @@ MIT License
           mapGlobals();
           detectLeaks();
           transpile().then(function(scripts) {
-            console.debug(messagePrefix + "Transpiled");
+            console.debug(messagePrefix + "Complete :)");
             return scripts;
+          }, function(error) {
+            logError(error)
           });
         }
       }
@@ -194,31 +196,35 @@ MIT License
     }
 
     function transpile() {
-      return new Promise(function(resolve) {
+      return new Promise(function(resolve, reject) {
+        try {
+          require(['babel'], function(Babel) {
+            var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0;
 
-        require(['babel'], function(Babel) {
-          var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0;
+            Promise.resolve([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
+              .then(function(_) { return Promise.all(_.map(extractWithName)) })
+              .then(function(_) { return Promise.all(_.map(transformWithName)) })
+              .then(function(_) { return Promise.all(_.map(wrapWithName)) })
+              .then(function(_) { return Promise.all(_.map(buildWithName)) })
+              .then(function(_) { return Promise.all(_.map(runWithName)) })
+              .then(function(_) { resolve(_) })
+              .catch(function(error) { reject(error) });
 
-          Promise.resolve([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
-            .then(function(_) { return Promise.all(_.map(extractWithName)) })
-            .then(function(_) { return Promise.all(_.map(transformWithName)) })
-            .then(function(_) { return Promise.all(_.map(wrapWithName)) })
-            .then(function(_) { return Promise.all(_.map(buildWithName)) })
-            .then(function(_) { return Promise.all(_.map(runWithName)) })
-            .then(function(_) { resolve(_) });
+            function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
+            function transform(script) { return Babel.transform(script, babelConfig).code }
+            function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
+            function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
+            function run(element) { appendTarget.appendChild(element); return element }
 
-          function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
-          function transform(script) { return Babel.transform(script, babelConfig).code }
-          function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
-          function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
-          function run(element) { appendTarget.appendChild(element); return element }
-
-          function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
-          function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
-          function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
-          function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
-          function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
-        });
+            function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
+            function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
+            function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
+            function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
+            function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
+          });
+        } catch (error) {
+          reject(error);
+        }
       });
     }
 
