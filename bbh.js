@@ -26,6 +26,7 @@ MIT License
           { name: 'babel',     exports: 'Babel'},
           { name: 'requirejs', ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'] },
         ],
+        mapping = [],
         babelConfig = {
           presets: ['es2015'],
           plugins: [],
@@ -46,13 +47,20 @@ MIT License
 
     function execute() {
       console.debug(welcome);
-      addCommentLine();
+      importConfig();
       loadScripts().then(function(_) {
+        addCommentLine();
         mapGlobals();
         detectLeaks();
-        transpile();
-        console.debug("BBH ♥ Complete");
+        transpile().then(function() {
+          console.debug("BBH ♥ Complete");
+        });
       });
+    }
+
+    function importConfig() {
+      babelConfig = self.babelConfig;
+      mapping = self.mapping;
     }
 
     function addCommentLine() {
@@ -79,7 +87,7 @@ MIT License
     }
 
     function mapGlobals() {
-      defaultMapping.forEach(function(_) {
+      defaultMapping.concat(mapping).forEach(function(_) {
         _ = {
           name: _.name,
           exports: [].concat(_.exports || []),
@@ -118,32 +126,40 @@ MIT License
     }
 
     function transpile() {
-      require(['babel'], function(Babel) {
-        var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0;
+      return new Promise(function(resolve) {
 
-        Promise.resolve([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
-          .then(function(_) { return Promise.all(_.map(extractWithName)) })
-          .then(function(_) { return Promise.all(_.map(transformWithName)) })
-          .then(function(_) { return Promise.all(_.map(wrapWithName)) })
-          .then(function(_) { return Promise.all(_.map(buildWithName)) })
-          .then(function(_) { return Promise.all(_.map(runWithName)) });
+        require(['babel'], function(Babel) {
+          var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0;
 
-        function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
-        function transform(script) { return Babel.transform(script, babelConfig).code }
-        function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
-        function build(script) { var element = document.createElement('script'); element.textContent = script; return element }
-        function run(element) { document.body.appendChild(element); return element }
+          Promise.resolve([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
+            .then(function(_) { return Promise.all(_.map(extractWithName)) })
+            .then(function(_) { return Promise.all(_.map(transformWithName)) })
+            .then(function(_) { return Promise.all(_.map(wrapWithName)) })
+            .then(function(_) { return Promise.all(_.map(buildWithName)) })
+            .then(function(_) { return Promise.all(_.map(runWithName)) })
+            .then(function(_) { resolve() });
 
-        function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
-        function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
-        function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
-        function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
-        function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
+          function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
+          function transform(script) { return Babel.transform(script, babelConfig).code }
+          function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
+          function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
+          function run(element) { document.body.appendChild(element); return element }
+
+          function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
+          function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
+          function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
+          function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
+          function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
+        });
       });
     }
 
     //-[ Exports ]--------------------------------------------------------------
 
+    self.babelConfig = babelConfig;
+    self.mapping = mapping;
+
+    // Immutable
     self.welcome = welcome;
   }
 })();
