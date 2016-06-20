@@ -12,7 +12,8 @@ MIT License
 
     //-[ Setup ]----------------------------------------------------------------
 
-    var welcome = "BBH ♥ Hello",
+    var messagePrefix = "BBH ♥ ",
+        welcome = messagePrefix + "Hello",
         commentLine = " BBH ♥ BELOW THIS LINE ",
         globalStart = Object.keys(window),
         globalIgnores = [],
@@ -26,11 +27,12 @@ MIT License
           { name: 'babel',     exports: 'Babel'},
           { name: 'requirejs', ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'] },
         ],
-        mapping = [],
+        modules = [],
         babelConfig = {
           presets: ['es2015'],
           plugins: [],
-        };
+        },
+        appendTarget;
 
     //-[ Execute On Load Complete ]---------------------------------------------
 
@@ -46,48 +48,78 @@ MIT License
     //-[ Methods ]--------------------------------------------------------------
 
     function execute() {
-      console.debug(welcome);
       importConfig();
+      console.debug(welcome);
+      determineAppendTarget();
+      addCommentLine();
+
       loadScripts().then(function(_) {
-        addCommentLine();
-        mapGlobals();
-        detectLeaks();
-        transpile().then(function() {
-          console.debug("BBH ♥ Complete");
-        });
+        var errors = _.filter(function(_) { return isError(_) });
+        if (errors.length) {
+          errors.forEach(function(_) { console.debug(messagePrefix + _.message) });
+          console.debug(messagePrefix + 'Loading Failed :(')
+        } else {
+          mapGlobals();
+          detectLeaks();
+          transpile().then(function() {
+            console.debug(messagePrefix + "Complete");
+          });
+        }
+      }, function(error) {
+        if (error) {
+          console.debug(messagePrefix + (error.message || error))
+        }
       });
     }
 
     function importConfig() {
       babelConfig = self.babelConfig;
-      mapping = self.mapping;
+      modules = self.modules;
+      appendTarget = self.appendTarget;
+    }
+
+    function determineAppendTarget() {
+      appendTarget = appendTarget ||
+                     document.querySelector('#bbh, #BBH, #__bbh, #__BBH') ||
+                     document.body;
     }
 
     function addCommentLine() {
       var padLine = new Array(commentLine.length + 1).join('-');
-      document.body.appendChild(document.createComment(padLine));
-      document.body.appendChild(document.createComment(commentLine));
-      document.body.appendChild(document.createComment(padLine));
+      appendTarget.appendChild(document.createComment(padLine));
+      appendTarget.appendChild(document.createComment(commentLine));
+      appendTarget.appendChild(document.createComment(padLine));
     }
 
     function loadScripts(){
       return Promise.all(requiredScriptUrls.map(function(url) {
-        return new Promise(function(resolve){
-          var script = document.createElement('script');
-          script.setAttribute('data-name', url.substr((url.lastIndexOf('/') || -1) + 1));
+        return new Promise(function(resolve, reject){
+          var script = document.createElement('script'),
+              dataName = url.substr((url.lastIndexOf('/') || -1) + 1);
+          script.setAttribute('data-name', dataName);
           script.async = false;
           script.src = url;
-          script.onload = function() { resolve(script) }
-          document.body.appendChild(script);
-          setTimeout(function() {
-            script.remove();
-          }, 0);
+          script.onload = function() { resolve(script) };
+          script.onerror = function(e) {
+            reject(new Error("The script \"" + (dataName || e.target.src) + "\" is not accessible."))
+          }
+          appendTarget.appendChild(script);
+          // setTimeout(function() {
+          //   script.remove();
+          // }, 0);
+        })
+      }).map(function(p) {
+        // catch and return errors to allow for processing
+        return p.catch(function(error) {
+          return error;
         })
       }));
     }
 
     function mapGlobals() {
-      defaultMapping.concat(mapping).forEach(function(_) {
+      defaultMapping.concat(modules).forEach(mapGlobal);
+
+      function mapGlobal(_) {
         _ = {
           name: _.name,
           exports: [].concat(_.exports || []),
@@ -95,27 +127,34 @@ MIT License
           callNoConflict: typeof _.callNoConflict === 'undefined' || !!_.callNoConflict,
           deleteFromWindow: typeof _.deleteFromWindow === 'undefined' || !!_.deleteFromWindow
         };
-        if (_.exports.length && window.hasOwnProperty(_.exports[0])) {
-          _.exported = window[_.exports[0]];
-          (function(_) {
-            define(_.name, function(require, exports, module) {
-              module.exports = _.exported;
-            });
+        var matchedExports = _.exports.filter(function(k) { return window.hasOwnProperty(k) });
+        if (_.name) {
+          if (matchedExports.length) {
+            _.exported = window[matchedExports[0]];
+            (function(_) {
+              define(_.name, function(require, exports, module) {
+                module.exports = _.exported;
+              });
+              require([_.name]);
+              if (_.callNoConflict && _.exported && typeof _.exported.noConflict === 'function') {
+                _.exported.noConflict();
+              }
+              if (_.deleteFromWindow) {
+                _.exports.forEach(function(k) {
+                  if (window.hasOwnProperty(k)) {
+                    delete window[k];
+                  }
+                })
+              }
+            })(_);
+          } else {
+            // Dummy definition
+            define(_.name, function() { return null });
             require([_.name]);
-            if (_.callNoConflict && _.exported && typeof _.exported.noConflict === 'function') {
-              _.exported.noConflict();
-            }
-            if (_.deleteFromWindow) {
-              _.exports.forEach(function(k) {
-                if (window.hasOwnProperty(k)) {
-                  delete window[k];
-                }
-              })
-            }
-          })(_);
+          }
         }
         [].push.apply(globalIgnores, _.ignores);
-      });
+      }
     }
 
     function detectLeaks() {
@@ -143,7 +182,7 @@ MIT License
           function transform(script) { return Babel.transform(script, babelConfig).code }
           function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
           function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
-          function run(element) { document.body.appendChild(element); return element }
+          function run(element) { appendTarget.appendChild(element); return element }
 
           function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
           function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
@@ -154,10 +193,18 @@ MIT License
       });
     }
 
+    function isError(o) {
+      return o && typeof o === 'object' && (
+               Object.prototype.toString(o) === '[object Error]' ||
+               (o.name === 'Error' && typeof o.message === 'string')
+             )
+    }
+
     //-[ Exports ]--------------------------------------------------------------
 
     self.babelConfig = babelConfig;
-    self.mapping = mapping;
+    self.modules = modules;
+    self.appendTarget = appendTarget;
 
     // Immutable
     self.welcome = welcome;
