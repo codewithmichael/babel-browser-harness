@@ -22,7 +22,7 @@ MIT License
           'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js',
         ],
         defaultMapping = [
-          { name: 'bbh',       ignores: 'bbh' },
+          { name: 'bbh',       exports: 'bbh' },
           { name: 'babel',     exports: 'Babel'},
           { name: 'requirejs', ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'] },
         ],
@@ -49,14 +49,17 @@ MIT License
       addCommentLine();
       loadScripts().then(function(_) {
         mapGlobals();
-        checkLeaks();
+        detectLeaks();
         transpile();
         console.debug("BBH ♥ Complete");
       });
     }
 
     function addCommentLine() {
+      var padLine = new Array(commentLine.length + 1).join('-');
+      document.body.appendChild(document.createComment(padLine));
       document.body.appendChild(document.createComment(commentLine));
+      document.body.appendChild(document.createComment(padLine));
     }
 
     function loadScripts(){
@@ -107,7 +110,7 @@ MIT License
       });
     }
 
-    function checkLeaks() {
+    function detectLeaks() {
       globalLeaks = Object.keys(window).filter(function(k) { return !~globalStart.concat(globalIgnores).indexOf(k) });
       if (globalLeaks.length) {
         console.debug("BBH ♥ Global Leak" + (globalLeaks.length > 1 ? "s" : "") + " Detected: " + globalLeaks.join(', '))
@@ -138,5 +141,9 @@ MIT License
         function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
       });
     }
+
+    //-[ Exports ]--------------------------------------------------------------
+
+    self.welcome = welcome;
   }
 })();
