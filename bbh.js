@@ -10,45 +10,57 @@ MIT License
   window.bbh = new function() {
     self = this;
 
-    var oldOnload = document.body.onload;
-    document.body.onload = function() {
-      if (typeof oldOnload === 'function') {
-        oldOnload.call(this);
-      }
-      go();
+    //-[ Setup ]----------------------------------------------------------------
+
+    var welcome = "BBH ♥ Hello",
+        commentLine = " BBH ♥ BELOW THIS LINE ",
+        globalStart = Object.keys(window),
+        globalIgnores = [],
+        globalLeaks = [],
+        requiredScriptUrls = [
+          'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js',
+        ],
+        defaultMapping = [
+          { name: 'bbh',       ignores: 'bbh' },
+          { name: 'babel',     exports: 'Babel'},
+          { name: 'requirejs', ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'] },
+        ],
+        babelConfig = {
+          presets: ['es2015'],
+          plugins: [],
+        };
+
+    //-[ Execute On Load Complete ]---------------------------------------------
+
+    document.addEventListener('DOMContentLoaded', loaded);
+    window.addEventListener('load', loaded);
+
+    function loaded() {
+      document.removeEventListener('DOMContentLoaded', loaded);
+      window.removeEventListener('load', loaded);
+      execute();
     }
 
-    function go() {
-      console.debug("BBH ♥ Hello");
+    //-[ Methods ]--------------------------------------------------------------
+
+    function execute() {
+      console.debug(welcome);
+      addCommentLine();
       loadScripts().then(function(_) {
         mapGlobals();
         checkLeaks();
+        transpile();
+        console.debug("BBH ♥ Complete");
       });
     }
 
-    //--------------------------------------------------------------------------
-
-    self.globalStart = Object.keys(window);
-    self.globalIgnores = [];
-    self.globalLeaks = [];
-    self.requiredScriptUrls = [
-      'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js',
-    ];
-    self.defaultMapping = [
-      { name: 'bbh',       ignores: 'bbh' },
-      { name: 'babel',     exports: 'Babel'},
-      { name: 'requirejs', ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'] },
-    ];
-    self.babelConfig = {
-      presets: ['es2015'],
-      plugins: [],
-    };
-
-    //--------------------------------------------------------------------------
+    function addCommentLine() {
+      document.body.appendChild(document.createComment(commentLine));
+    }
 
     function loadScripts(){
-      return Promise.all(self.requiredScriptUrls.map(function(url) {
+      return Promise.all(requiredScriptUrls.map(function(url) {
         return new Promise(function(resolve){
           var script = document.createElement('script');
           script.setAttribute('data-name', url.substr((url.lastIndexOf('/') || -1) + 1));
@@ -56,12 +68,15 @@ MIT License
           script.src = url;
           script.onload = function() { resolve(script) }
           document.body.appendChild(script);
+          setTimeout(function() {
+            script.remove();
+          }, 0);
         })
       }));
     }
 
     function mapGlobals() {
-      self.defaultMapping.forEach(function(_) {
+      defaultMapping.forEach(function(_) {
         _ = {
           name: _.name,
           exports: [].concat(_.exports || []),
@@ -88,15 +103,40 @@ MIT License
             }
           })(_);
         }
-        [].push.apply(self.globalIgnores, _.ignores);
+        [].push.apply(globalIgnores, _.ignores);
       });
     }
 
     function checkLeaks() {
-      self.globalLeaks = Object.keys(window).filter(function(k) { return !~self.globalStart.concat(self.globalIgnores).indexOf(k) });
-      if (self.globalLeaks.length) {
-        console.debug("BBH ♥ Global Leak" + (self.globalLeaks.length > 1 ? "s" : "") + " Detected: " + self.globalLeaks.join(', '))
+      globalLeaks = Object.keys(window).filter(function(k) { return !~globalStart.concat(globalIgnores).indexOf(k) });
+      if (globalLeaks.length) {
+        console.debug("BBH ♥ Global Leak" + (globalLeaks.length > 1 ? "s" : "") + " Detected: " + globalLeaks.join(', '))
       }
+    }
+
+    function transpile() {
+      require(['babel'], function(Babel) {
+        var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0;
+
+        Promise.resolve([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
+          .then(function(_) { return Promise.all(_.map(extractWithName)) })
+          .then(function(_) { return Promise.all(_.map(transformWithName)) })
+          .then(function(_) { return Promise.all(_.map(wrapWithName)) })
+          .then(function(_) { return Promise.all(_.map(buildWithName)) })
+          .then(function(_) { return Promise.all(_.map(runWithName)) });
+
+        function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
+        function transform(script) { return Babel.transform(script, babelConfig).code }
+        function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
+        function build(script) { var element = document.createElement('script'); element.textContent = script; return element }
+        function run(element) { document.body.appendChild(element); return element }
+
+        function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
+        function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
+        function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
+        function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
+        function runWithName(nameAndElement) { return [nameAndElement[0], run(nameAndElement[1])] }
+      });
     }
   }
 })();

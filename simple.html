@@ -9,10 +9,13 @@ MIT License
   <head>
     <meta charset="utf-8" />
     <title>Babel Browser Harness</title>
+    <script src="./bbh.js"></script>
   </head>
   <body>
-
-    <script src="./bbh.js"></script>
-
+    <div id="app">
+      <script type="text/babel">
+        document.getElementById('app').textContent = "BBH ♥ Hello"
+      </script>
+    </div>
   </body>
 </html>
