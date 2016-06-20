@@ -131,7 +131,7 @@ MIT License
           script.src = url;
           script.onload = function() { resolve(script) };
           script.onerror = function(e) {
-            reject(new Error("The script \"" + (dataName || e.target.src) + "\" is not accessible."))
+            reject(new Error("The script \"" + (dataName || e.target.src) + "\" is not accessible"))
           }
           appendTarget.appendChild(script);
           if (removeModuleScripts) {
