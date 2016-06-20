@@ -37,10 +37,10 @@ MIT License
         bbh.babelConfig = {
           presets: ['es2015', 'react'],
         };
-        bbh.modules = [
-          { name: 'react',     exports: 'React' },
-          { name: 'react-dom', exports: 'ReactDOM' },
-        ];
+        bbh.modules = {
+          react:       { exports: 'React' },
+          "react-dom": { exports: 'ReactDOM' },
+        }
       </script>
     </div>
 

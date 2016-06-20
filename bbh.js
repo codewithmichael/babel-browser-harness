@@ -22,7 +22,7 @@ MIT License
           'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js',
           'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js',
         ],
-        defaultMapping = [
+        defaultModules = [
           { name: 'bbh',       exports: 'bbh' },
           { name: 'babel',     exports: 'Babel'},
           { name: 'requirejs', ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'] },
@@ -117,7 +117,15 @@ MIT License
     }
 
     function mapGlobals() {
-      defaultMapping.concat(modules).forEach(mapGlobal);
+      [modules, defaultModules].forEach(function(_) {
+        if (Array.isArray(_)) {
+          _.forEach(mapGlobal);
+        } else {
+          Object.keys(_)
+            .map(function(k) { return Object.assign({}, _[k], { name: k }) })
+            .forEach(mapGlobal)
+        }
+      });
 
       function mapGlobal(_) {
         _ = {
