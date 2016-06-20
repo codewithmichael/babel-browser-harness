@@ -18,21 +18,30 @@ MIT License
         globalStart = Object.keys(window),
         globalIgnores = [],
         globalLeaks = [],
-        requiredScriptUrls = [
-          'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js',
-          'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js',
-        ],
         defaultModules = [
-          { name: 'bbh',       exports: 'bbh' },
-          { name: 'babel',     exports: 'Babel'},
-          { name: 'requirejs', ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'] },
+          {
+            name: 'bbh',
+            exports: 'bbh'
+          },
+          {
+            name: 'babel',
+            exports: 'Babel',
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js'
+          },
+          {
+            name: 'requirejs',
+            ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'],
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js'
+          },
         ],
         modules = [],
         babelConfig = {
           presets: ['es2015'],
           plugins: [],
         },
-        appendTarget;
+        removeModuleScripts = true,
+        appendTarget,
+        moduleEntries;
 
     //-[ Execute On Load Complete ]---------------------------------------------
 
@@ -50,31 +59,36 @@ MIT License
     function execute() {
       importConfig();
       console.debug(welcome);
+      buildModuleEntries();
       determineAppendTarget();
       addCommentLine();
 
-      loadScripts().then(function(_) {
-        var errors = _.filter(function(_) { return isError(_) });
+      loadScripts().then(mapAndTranspile, logError);
+
+      function mapAndTranspile(loadedScripts) {
+        var errors = loadedScripts.filter(function(_) { return isError(_) });
         if (errors.length) {
-          errors.forEach(function(_) { console.debug(messagePrefix + _.message) });
-          console.debug(messagePrefix + 'Loading Failed :(')
+          errors.forEach(function(_) { logError(_) });
+          logError('Loading Failed :(')
         } else {
           mapGlobals();
           detectLeaks();
-          transpile().then(function() {
-            console.debug(messagePrefix + "Complete");
+          transpile().then(function(scripts) {
+            console.debug(messagePrefix + "Transpiled");
+            return scripts;
           });
         }
-      }, function(error) {
-        if (error) {
-          console.debug(messagePrefix + (error.message || error))
-        }
-      });
+      }
+
+      function logError(error) {
+        console.debug(messagePrefix + (error && error.message || error || "An unknown error occurred"))
+      }
     }
 
     function importConfig() {
       babelConfig = self.babelConfig;
       modules = self.modules;
+      removeModuleScripts = self.removeModuleScripts;
       appendTarget = self.appendTarget;
     }
 
@@ -92,7 +106,8 @@ MIT License
     }
 
     function loadScripts(){
-      return Promise.all(requiredScriptUrls.map(function(url) {
+      var urls = moduleEntries.map(function(_) { return _.src }).filter(Boolean);
+      return Promise.all(urls.map(function(url) {
         return new Promise(function(resolve, reject){
           var script = document.createElement('script'),
               dataName = url.substr((url.lastIndexOf('/') || -1) + 1);
@@ -104,9 +119,11 @@ MIT License
             reject(new Error("The script \"" + (dataName || e.target.src) + "\" is not accessible."))
           }
           appendTarget.appendChild(script);
-          // setTimeout(function() {
-          //   script.remove();
-          // }, 0);
+          if (removeModuleScripts) {
+            setTimeout(function() {
+              script.remove();
+            }, 0);
+          }
         })
       }).map(function(p) {
         // catch and return errors to allow for processing
@@ -116,16 +133,20 @@ MIT License
       }));
     }
 
-    function mapGlobals() {
+    function buildModuleEntries() {
+      var result = [];
       [modules, defaultModules].forEach(function(_) {
         if (Array.isArray(_)) {
-          _.forEach(mapGlobal);
+          [].push.apply(result, _);
         } else {
-          Object.keys(_)
-            .map(function(k) { return Object.assign({}, _[k], { name: k }) })
-            .forEach(mapGlobal)
+          Object.keys(_).forEach(function(k) { result.push(Object.assign({}, _[k], { name: k })) })
         }
       });
+      moduleEntries = result;
+    }
+
+    function mapGlobals() {
+      moduleEntries.forEach(mapGlobal);
 
       function mapGlobal(_) {
         _ = {
@@ -184,7 +205,7 @@ MIT License
             .then(function(_) { return Promise.all(_.map(wrapWithName)) })
             .then(function(_) { return Promise.all(_.map(buildWithName)) })
             .then(function(_) { return Promise.all(_.map(runWithName)) })
-            .then(function(_) { resolve() });
+            .then(function(_) { resolve(_) });
 
           function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
           function transform(script) { return Babel.transform(script, babelConfig).code }
@@ -212,6 +233,7 @@ MIT License
 
     self.babelConfig = babelConfig;
     self.modules = modules;
+    self.removeModuleScripts = removeModuleScripts;
     self.appendTarget = appendTarget;
 
     // Immutable

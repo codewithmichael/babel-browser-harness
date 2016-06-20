@@ -31,15 +31,11 @@ MIT License
 
 
     <div id="bbh">
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js"></script>
       <script>
-        bbh.babelConfig = {
-          presets: ['es2015', 'react'],
-        };
+        bbh.babelConfig = { presets: ['es2015', 'react'] };
         bbh.modules = {
-          react:       { exports: 'React' },
-          "react-dom": { exports: 'ReactDOM' },
+          react:       { exports: 'React',    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js' },
+          "react-dom": { exports: 'ReactDOM', src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js' },
         }
       </script>
     </div>
