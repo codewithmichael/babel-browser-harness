@@ -21,25 +21,26 @@ MIT License
       <!-- Example (using React) -->
       <script type="text/babel" name="react-example">
         import React from 'react'
-        import ReactDOM from 'react-dom'
+        import { render } from 'react-dom'
         import { welcome } from './bbh'
 
-        ReactDOM.render(<div>{ welcome }</div>, document.getElementById('app'))
+        render(<div>{ welcome }</div>, document.getElementById('app'))
       </script>
 
     </div>
 
 
-    <div id="bbh">
-      <script>
-        bbh.babelConfig = { presets: ['es2015', 'react'] };
-        bbh.modules = {
-          react:       { exports: 'React',    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js' },
-          "react-dom": { exports: 'ReactDOM', src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js' },
-        }
-      </script>
-    </div>
+    <!--------------------------------->
+    <!-- ♥ CONFIGURATION FOR REACT ♥ -->
+    <!--------------------------------->
 
+    <script>
+      bbh.babelConfig = { presets: ['es2015', 'react'] };
+      bbh.modules = [
+        { name: "react",     exports: 'React',    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js' },
+        { name: "react-dom", exports: 'ReactDOM', src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js' },
+      ]
+    </script>
 
   </body>
 </html>

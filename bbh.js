@@ -14,6 +14,7 @@ MIT License
 
     var messagePrefix = "BBH ♥ ",
         welcome = messagePrefix + "Hello",
+        errorString = "Error Detected :(",
         commentLine = " BBH ♥ BELOW THIS LINE ",
         globalStart = Object.keys(window),
         globalIgnores = [],
@@ -63,18 +64,21 @@ MIT License
       determineAppendTarget();
       addCommentLine();
 
+      logStatus("Loading Modules");
       loadScripts().then(mapAndTranspile, logError);
 
       function mapAndTranspile(loadedScripts) {
         var errors = loadedScripts.filter(function(_) { return isError(_) });
         if (errors.length) {
-          errors.forEach(function(_) { logError(_) });
-          logError('Loading Failed :(')
+          logStatus(errorString)
+          errors.forEach(function(_) { logStatus(_.message || _) });
         } else {
           mapGlobals();
           detectLeaks();
+
+          logStatus("Transpiling");
           transpile().then(function(scripts) {
-            console.debug(messagePrefix + "Complete :)");
+            logStatus("Running");
             return scripts;
           }, function(error) {
             logError(error)
@@ -82,8 +86,17 @@ MIT License
         }
       }
 
+      function logStatus(message) {
+        console.debug(messagePrefix + message);
+      }
+
       function logError(error) {
-        console.debug(messagePrefix + (error && error.message || error || "An unknown error occurred"))
+        logStatus(errorString);
+        if (isError(error)) {
+          throw error;
+        } else {
+          throw new Error(error && error.message || error || "An unknown error occurred")
+        }
       }
     }
 
@@ -191,7 +204,7 @@ MIT License
     function detectLeaks() {
       globalLeaks = Object.keys(window).filter(function(k) { return !~globalStart.concat(globalIgnores).indexOf(k) });
       if (globalLeaks.length) {
-        console.debug("BBH ♥ Global Leak" + (globalLeaks.length > 1 ? "s" : "") + " Detected: " + globalLeaks.join(', '))
+        console.debug(messagePrefix + "Global Leak" + (globalLeaks.length > 1 ? "s" : "") + " Detected: " + JSON.stringify(globalLeaks))
       }
     }
 
@@ -212,7 +225,7 @@ MIT License
 
             function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
             function transform(script) { return Babel.transform(script, babelConfig).code }
-            function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) {" + script + "\n;}); require(['" + name + "']);" }
+            function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) { try {" + script + "\n; } catch (error) { console.debug('" + messagePrefix + "' + 'Error Detected :('); throw error }}); require(['" + name + "']);" }
             function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
             function run(element) { appendTarget.appendChild(element); return element }
 
