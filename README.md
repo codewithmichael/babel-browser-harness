@@ -32,8 +32,8 @@ without investing precious time on system configuration.
         // Write ES6+
 
         // Display "BBH ♥ Hello"
-        import { welcome } from 'bbh';
-        document.getElementById('app').textContent = welcome;
+        import { welcome } from 'bbh'
+        document.getElementById('app').textContent = welcome
 
       </script>
     </div>
