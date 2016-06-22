@@ -2,6 +2,7 @@ BBH ♥ Hello
 ===========
 
 [Installation](#installation)
+| [Libraries + Options](#libraries--options)
 | [Configuration](#configuration)
 | [Logging](#logging)
 | [FAQ](#faq)
