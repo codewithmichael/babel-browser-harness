@@ -348,6 +348,12 @@ If any errors occur at this point, they are entirely your fault :D
 FAQ
 ---
 
+* [Does BBH handle React/JSX syntax?](#does-bbh-handle-reactjsx-syntax)
+* [Can I mix and match normal (ES5) and ES6+ scripts?](#can-i-mix-and-match-normal-es5-and-es6-scripts)
+* [Can I separate my modules into their own files?](#can-i-separate-my-modules-into-their-own-files)
+* [How can I develop with BBH on my mobile device?](#how-can-i-develop-with-bbh-on-my-mobile-device)
+* [Is BBH "production-ready"?](#is-bbh-production-ready)
+
 ### *Does BBH handle React/JSX syntax?*
 
 ***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
