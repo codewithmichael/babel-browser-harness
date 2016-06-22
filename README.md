@@ -1,6 +1,13 @@
 BBH ♥ Hello
 ===========
 
+[Installation](#installation)
+| [Configuration](#configuration)
+| [Logging](#logging)
+| [FAQ](#faq)
+| [Credit](#credit)
+| [License](#license)
+
 The Babel Browser Harness (BBH) is a simple CDN-based browser polyfill
 that provides in-browser ES6+ transpiling via [Babel](https://babeljs.io/) using
 only a single script include.
@@ -397,7 +404,22 @@ you would like to interact with the module system.
   server in the current directory:
   ```sh
   $ python -m SimpleHTTPServer
-    ```
+  ```
+
+### *How can I develop with BBH on my mobile device?*
+
+If you're using a mobile editor that has a built-in, Webkit-based preview
+option—like [Textastic](http://www.textasticapp.com/) or
+[Coda](https://panic.com/coda-ios/)—you're ready to go. But console capabilities
+vary between editors.
+
+To provide a consistent JavaScript-based console for debugging, try the [Firebug Lite](https://getfirebug.com/firebuglite) developer
+console. You can include the latest stable version with the following:
+```html
+<script src="https://getfirebug.com/firebug-lite.js#startOpened"></script>
+```
+Note the `#startOpened` option, which ensures you'll catch BBH's startup
+messages.
 
 ### *Is BBH "production-ready"?*
 
