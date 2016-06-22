@@ -340,22 +340,6 @@ If any errors occur at this point, they are entirely your fault :D
 
 FAQ
 ---
-* **Q:** *Can I separate my modules into their own files?*
-
-  **A:** ***Yes***, but it requires using a simple web server.
-
-  * If you have [Node.js](https://nodejs.org/) installed, you can use
-    the [http-server](https://www.npmjs.com/package/http-server) package to fire
-    up a simple web server.
-
-  * Alternately, if you are on a a *Mac* or *Linux* machine, you probably
-    already have Python installed, which comes with it's own simple web server.
-
-    Open a terminal and run the following command to start a simple Python HTTP
-    server in the current directory:
-    ```sh
-    $ python -m SimpleHTTPServer
-    ```
 * **Q:** *Does BBH handle React/JSX syntax?*
 
   **A:** ***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
@@ -382,7 +366,7 @@ FAQ
   ```
 
   See the [Configuration](#configuration) section for more details on module
-  definitions and Babel presets).
+  definitions and Babel presets.
 
 * **Q:** *Can I mix and match normal (ES5) and ES6+ scripts?*
 
@@ -396,6 +380,35 @@ FAQ
 
   Also, you can use CommonJS module syntax (`require`, `module`, `exports`) if
   you would like to interact with the module system.
+
+* **Q:** *Can I separate my modules into their own files?*
+
+  **A:** ***Yes***, but it requires using a simple web server.
+
+  * If you have [Node.js](https://nodejs.org/) installed, you can use
+    the [http-server](https://www.npmjs.com/package/http-server) package to fire
+    up a simple web server.
+
+  * Alternately, if you are on a a *Mac* or *Linux* machine, you probably
+    already have Python installed, which comes with it's own simple web server.
+
+    Open a terminal and run the following command to start a simple Python HTTP
+    server in the current directory:
+    ```sh
+    $ python -m SimpleHTTPServer
+      ```
+
+* **Q:** *Is BBH "production-ready"?*
+
+  **A:** ***No!*** BBH is strictly a development tool and should never be used
+  in a production environment. When you feel your code has matured to a serious
+  level, create an appropriate build environment or transpile server-side.
+
+  If you need in-browser transpiling, for example to create a user-facing REPL
+  like [JSFiddle](https://jsfiddle.net/), consider a dependency-free, packaged
+  library solution like
+  [babel-standalone](https://github.com/Daniel15/babel-standalone)
+  that focuses solely on transpiling.
 
 Credit
 ------
