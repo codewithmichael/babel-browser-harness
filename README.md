@@ -340,75 +340,76 @@ If any errors occur at this point, they are entirely your fault :D
 
 FAQ
 ---
-* **Q:** *Does BBH handle React/JSX syntax?*
 
-  **A:** ***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
-  syntax, but it has to be enabled in the Babel configuration.
+### *Does BBH handle React/JSX syntax?*
 
-  Here's a sample configuration that handles the Babel presets and module
-  mapping for React and ReactDOM 15.1.0:
-  ```js
-  bbh.babelConfig = {
-    presets: ['es2015', 'react']
-  };
-  bbh.modules = [
-    {
-      name: "react",
-      exports: 'React',
-      src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
-    },
-    {
-      name: "react-dom",
-      exports: 'ReactDOM',
-      src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
-    },
-  ]
-  ```
+***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
+syntax, but it has to be enabled in the Babel configuration.
 
-  See the [Configuration](#configuration) section for more details on module
-  definitions and Babel presets.
+Here's a sample configuration that handles the Babel presets and module
+mapping for React and ReactDOM 15.1.0:
+```js
+bbh.babelConfig = {
+  presets: ['es2015', 'react']
+};
+bbh.modules = [
+  {
+    name: "react",
+    exports: 'React',
+    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
+  },
+  {
+    name: "react-dom",
+    exports: 'ReactDOM',
+    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
+  },
+]
+```
 
-* **Q:** *Can I mix and match normal (ES5) and ES6+ scripts?*
+See the [Configuration](#configuration) section for more details on module
+definitions and Babel presets.
 
-  **A:** ***Yes,*** but Babel-transpiled scripts run *after* all other
-  scripts on the page, so you'll still want to add `type="text/babel"` to your
-  regular ES5 scripts so they run in sequence.
+### *Can I mix and match normal (ES5) and ES6+ scripts?*
 
-  Don't worry, normal ES5 scripts works just fine when parsed as ES6+,
-  but they'll have the restriction of running as their own module, so you'll
-  have to assign any global variables directly to the `window` object.
+***Yes,*** but Babel-transpiled scripts run *after* all other
+scripts on the page, so you'll still want to add `type="text/babel"` to your
+regular ES5 scripts so they run in sequence.
 
-  Also, you can use CommonJS module syntax (`require`, `module`, `exports`) if
-  you would like to interact with the module system.
+Don't worry, normal ES5 scripts works just fine when parsed as ES6+,
+but they'll have the restriction of running as their own module, so you'll
+have to assign any global variables directly to the `window` object.
 
-* **Q:** *Can I separate my modules into their own files?*
+Also, you can use CommonJS module syntax (`require`, `module`, `exports`) if
+you would like to interact with the module system.
 
-  **A:** ***Yes***, but it requires using a simple web server.
+### *Can I separate my modules into their own files?*
 
-  * If you have [Node.js](https://nodejs.org/) installed, you can use
-    the [http-server](https://www.npmjs.com/package/http-server) package to fire
-    up a simple web server.
+***Yes***, but it requires using a simple web server.
 
-  * Alternately, if you are on a a *Mac* or *Linux* machine, you probably
-    already have Python installed, which comes with it's own simple web server.
+* If you have [Node.js](https://nodejs.org/) installed, you can use
+  the [http-server](https://www.npmjs.com/package/http-server) package to fire
+  up a simple web server.
 
-    Open a terminal and run the following command to start a simple Python HTTP
-    server in the current directory:
-    ```sh
-    $ python -m SimpleHTTPServer
-      ```
+* Alternately, if you are on a a *Mac* or *Linux* machine, you probably
+  already have Python installed, which comes with it's own simple web server.
 
-* **Q:** *Is BBH "production-ready"?*
+  Open a terminal and run the following command to start a simple Python HTTP
+  server in the current directory:
+  ```sh
+  $ python -m SimpleHTTPServer
+    ```
 
-  **A:** ***No!*** BBH is strictly a development tool and should never be used
-  in a production environment. When you feel your code has matured to a serious
-  level, create an appropriate build environment or transpile server-side.
+### *Is BBH "production-ready"?*
 
-  If you need in-browser transpiling, for example to create a user-facing REPL
-  like [JSFiddle](https://jsfiddle.net/), consider a dependency-free, packaged
-  library solution like
-  [babel-standalone](https://github.com/Daniel15/babel-standalone)
-  that focuses solely on transpiling.
+***No!*** BBH is strictly a development tool and should never be used
+in a production environment. When you feel your code has matured to a serious
+level, create an appropriate build environment or transpile server-side.
+
+If you need in-browser transpiling, for example to create a user-facing REPL
+like [JSFiddle](https://jsfiddle.net/), consider a dependency-free, packaged
+library solution like
+[babel-standalone](https://github.com/Daniel15/babel-standalone)
+that focuses solely on transpiling.
 
 Credit
 ------
