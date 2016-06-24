@@ -349,11 +349,37 @@ If any errors occur at this point, they are entirely your fault :D
 FAQ
 ---
 
+* [Why isn't my BBH using the heart (♥) symbol?](#why-isnt-my-bbh-using-the-heart--symbol)
 * [Does BBH handle React/JSX syntax?](#does-bbh-handle-reactjsx-syntax)
 * [Can I mix and match normal (ES5) and ES6+ scripts?](#can-i-mix-and-match-normal-es5-and-es6-scripts)
 * [Can I separate my modules into their own files?](#can-i-separate-my-modules-into-their-own-files)
 * [How can I develop with BBH on my mobile device?](#how-can-i-develop-with-bbh-on-my-mobile-device)
 * [Is BBH "production-ready"?](#is-bbh-production-ready)
+
+### *Why isn't my BBH using the heart (♥) symbol?*
+
+The heart symbol (♥) is a unicode character in the UTF-8 character set.
+
+At startup BBH checks to see if it is running in a UTF-8 context. If not, it
+uses a middle dot (·), a character capable of being rendered in the browser's
+default ISO-8859-1 character set.
+
+If you would like to have UTF-8 character support (and see the heart), you may
+change the character set for either the entire document or just the BBH script
+itself (see below).
+
+***Document-Level UTF-8 Support***
+```html
+<html>
+  <head>
+    <meta charset="utf-8" />
+    ...
+```
+
+***Script-Level UTF-8 Support***
+```html
+<script src="bbh.js" charset="utf-8"></script>
+```
 
 ### *Does BBH handle React/JSX syntax?*
 

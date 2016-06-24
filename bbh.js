@@ -12,10 +12,11 @@ MIT License
 
     //-[ Setup ]----------------------------------------------------------------
 
-    var messagePrefix = "BBH ♥ ",
+    var messageSymbol = "♥".length === 1 ? "♥" : "\u00B7",
+        messagePrefix = "BBH " + messageSymbol + " ",
         welcome = messagePrefix + "Hello",
         errorString = "Error Detected :(",
-        commentLine = " BBH ♥ BELOW THIS LINE ",
+        commentLine = " " + messagePrefix.toUpperCase() + " BELOW THIS LINE ",
         globalStart = Object.keys(window),
         globalIgnores = [],
         globalLeaks = [],
