@@ -12,15 +12,13 @@ MIT License
 
     //-[ Setup ]----------------------------------------------------------------
 
-    var messageSymbol = "♥".length === 1 ? "♥" : "\u00B7",
-        messagePrefix = "BBH " + messageSymbol + " ",
-        welcome = messagePrefix + "Hello",
-        errorString = "Error Detected :(",
-        commentLine = " " + messagePrefix.toUpperCase() + " BELOW THIS LINE ",
-        globalStart = Object.keys(window),
-        globalIgnores = [],
-        globalLeaks = [],
-        defaultModules = [
+    var MESSAGE_SYMBOL = "♥".length === 1 ? "♥" : "\u00B7",  // heart or middot
+        MESSAGE_PREFIX = "BBH " + MESSAGE_SYMBOL + " ",
+        WELCOME = MESSAGE_PREFIX + "Hello",
+        ERROR_STRING = "Error Detected :(",
+        COMMENT_LINE = " " + MESSAGE_PREFIX.toUpperCase() + " BELOW THIS LINE ",
+        GLOBAL_START = Object.keys(window),
+        DEFAULT_MODULES = [
           {
             name: 'bbh',
             exports: 'bbh'
@@ -35,12 +33,15 @@ MIT License
             ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'],
             src: 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js'
           },
-        ],
-        modules = [],
-        babelConfig = {
+        ];
+
+    var babelConfig = {
           presets: ['es2015'],
           plugins: [],
         },
+        globalIgnores = [],
+        globalLeaks = [],
+        modules = [],
         removeModuleScripts = true,
         appendTarget,
         moduleEntries;
@@ -60,18 +61,18 @@ MIT License
 
     function execute() {
       importConfig();
-      console.debug(welcome);
+      console.debug(WELCOME);
       buildModuleEntries();
       determineAppendTarget();
       addCommentLine();
 
       logStatus("Loading Modules");
-      loadScripts().then(mapAndTranspile, logError);
+      loadExternalScripts().then(mapAndTranspile, logAndThrowError);
 
       function mapAndTranspile(loadedScripts) {
         var errors = loadedScripts.filter(function(_) { return isError(_) });
         if (errors.length) {
-          logStatus(errorString)
+          logStatus(ERROR_STRING)
           errors.forEach(function(_) { logStatus(_.message || _) });
         } else {
           mapGlobals();
@@ -82,17 +83,17 @@ MIT License
             logStatus("Running");
             return scripts;
           }, function(error) {
-            logError(error)
+            logAndThrowError(error)
           });
         }
       }
 
       function logStatus(message) {
-        console.debug(messagePrefix + message);
+        console.debug(MESSAGE_PREFIX + message);
       }
 
-      function logError(error) {
-        logStatus(errorString);
+      function logAndThrowError(error) {
+        logStatus(ERROR_STRING);
         if (isError(error)) {
           throw error;
         } else {
@@ -115,13 +116,13 @@ MIT License
     }
 
     function addCommentLine() {
-      var padLine = new Array(commentLine.length + 1).join('-');
+      var padLine = new Array(COMMENT_LINE.length + 1).join('-');
       appendTarget.appendChild(document.createComment(padLine));
-      appendTarget.appendChild(document.createComment(commentLine));
+      appendTarget.appendChild(document.createComment(COMMENT_LINE));
       appendTarget.appendChild(document.createComment(padLine));
     }
 
-    function loadScripts(){
+    function loadExternalScripts(){
       var urls = moduleEntries.map(function(_) { return _.src }).filter(Boolean);
       return Promise.all(urls.map(function(url) {
         return new Promise(function(resolve, reject){
@@ -142,7 +143,7 @@ MIT License
           }
         })
       }).map(function(p) {
-        // catch and return errors to allow for processing
+        // catch and return errors to allow for post-processing
         return p.catch(function(error) {
           return error;
         })
@@ -151,7 +152,7 @@ MIT License
 
     function buildModuleEntries() {
       var result = [];
-      [modules, defaultModules].forEach(function(_) {
+      [modules, DEFAULT_MODULES].forEach(function(_) {
         if (Array.isArray(_)) {
           [].push.apply(result, _);
         } else {
@@ -203,9 +204,9 @@ MIT License
     }
 
     function detectLeaks() {
-      globalLeaks = Object.keys(window).filter(function(k) { return !~globalStart.concat(globalIgnores).indexOf(k) });
+      globalLeaks = Object.keys(window).filter(function(k) { return !~GLOBAL_START.concat(globalIgnores).indexOf(k) });
       if (globalLeaks.length) {
-        console.debug(messagePrefix + "Global Leak" + (globalLeaks.length > 1 ? "s" : "") + " Detected: " + JSON.stringify(globalLeaks))
+        console.debug(MESSAGE_PREFIX + "Global Leak" + (globalLeaks.length > 1 ? "s" : "") + " Detected: " + JSON.stringify(globalLeaks))
       }
     }
 
@@ -226,7 +227,7 @@ MIT License
 
             function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
             function transform(script) { return Babel.transform(script, babelConfig).code }
-            function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) { try {" + script + "\n; } catch (error) { console.debug('" + messagePrefix + "' + 'Error Detected :('); throw error }}); require(['" + name + "']);" }
+            function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) { try {" + script + "\n; } catch (error) { console.debug('" + MESSAGE_PREFIX + "' + 'Error Detected :('); throw error }}); require(['" + name + "']);" }
             function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
             function run(element) { appendTarget.appendChild(element); return element }
 
@@ -257,6 +258,6 @@ MIT License
     self.appendTarget = appendTarget;
 
     // Immutable
-    self.welcome = welcome;
+    self.welcome = WELCOME;
   }
 })();
