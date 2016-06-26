@@ -8,14 +8,7 @@ TEST:
 Load remote <script type="text/babel"> items into local document
 -->
 <meta charset="utf-8" />
-<script>
-  window.addEventListener('message', function $(_){
-    if (_.origin === document.origin) {
-      eval('('+_.data.onmessage+')').apply(this, arguments);
-      window.removeEventListener('message', $);
-    }
-  })
-</script>
+<script src="./bbh.js#registration"></script>
 
 <script type="text/babel" name="module1">
   export const message = "module1 loaded"

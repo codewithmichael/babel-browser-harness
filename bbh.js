@@ -43,9 +43,24 @@ MIT License
         globalLeaks = [],
         modules = [],
         registrations = [],
+        isRegistration = false,
         removeModuleScripts = true,
         appendTarget,
         moduleEntries;
+
+    //-[ Check for URL-hash-based Registration Mode ]---------------------------
+
+    loadRegistrationModeFromUrlHash();
+    if (isRegistration) {
+      // Listen for a message and execute onmessage request
+      window.addEventListener('message', function $(_){
+        if (_.origin === document.origin) {
+          eval('('+_.data.onmessage+')').apply(this, arguments);
+          window.removeEventListener('message', $);
+        }
+      })
+      return;
+    }
 
     //-[ Execute On Load Complete ]---------------------------------------------
 
@@ -59,6 +74,22 @@ MIT License
     }
 
     //-[ Methods ]--------------------------------------------------------------
+
+    function loadRegistrationModeFromUrlHash() {
+      var src, hashIndex, hash;
+      if (document.currentScript) {
+        src = document.currentScript.getAttribute('src');
+        if (src) {
+          hashIndex = src.indexOf('#');
+          if (~hashIndex) {
+            hash = src.substr(hashIndex + 1);
+            if (hash === 'registration') {
+              isRegistration = true;
+            }
+          }
+        }
+      }
+    }
 
     function execute() {
       importConfig();
@@ -78,7 +109,7 @@ MIT License
       function loadRegistrationsAndMergeScriptsAndErrors(scriptsAndErrors) {
         // Load registrations and append elements
         if (!registrations.length) {
-          return _;
+          return scriptsAndErrors;
         }
         return loadRegistrations().then(function(registrationScriptsAndErrors) {
           return scriptsAndErrors.concat(registrationScriptsAndErrors)
@@ -209,7 +240,7 @@ MIT License
             ],
             promiseTimer = new Promise(function(resolve, reject) {
               var timer = setTimeout(function() {
-                reject(new Error('Registration URL not resolved within timeout (' + registration.timeout + 'ms): "' + registration.src + '"'));
+                reject(new Error('Registration didn\'t resolve: "' + registration.src + '" (' + registration.timeout + 'ms)'));
               }, registration.timeout);
               Promise.all(promises).then(function() {
                 clearTimeout(timer);
