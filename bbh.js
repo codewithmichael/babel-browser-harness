@@ -42,6 +42,7 @@ MIT License
         globalIgnores = [],
         globalLeaks = [],
         modules = [],
+        registrations = [],
         removeModuleScripts = true,
         appendTarget,
         moduleEntries;
@@ -61,16 +62,31 @@ MIT License
 
     function execute() {
       importConfig();
+
       console.debug(WELCOME);
+
       buildModuleEntries();
       determineAppendTarget();
       addCommentLine();
 
       logStatus("Loading Modules");
-      loadExternalScripts().then(mapAndTranspile, logAndThrowError);
+      loadExternalScripts()
+        .then(loadRegistrationsAndMergeScriptsAndErrors)
+        .then(mapAndTranspile)
+        .catch(logAndThrowError);
 
-      function mapAndTranspile(loadedScripts) {
-        var errors = loadedScripts.filter(function(_) { return isError(_) });
+      function loadRegistrationsAndMergeScriptsAndErrors(scriptsAndErrors) {
+        // Load registrations and append elements
+        if (!registrations.length) {
+          return _;
+        }
+        return loadRegistrations().then(function(registrationScriptsAndErrors) {
+          return scriptsAndErrors.concat(registrationScriptsAndErrors)
+        });
+      }
+
+      function mapAndTranspile(scriptsAndErrors) {
+        var errors = scriptsAndErrors.filter(function(_) { return isError(_) });
         if (errors.length) {
           logStatus(ERROR_STRING)
           errors.forEach(function(_) { logStatus(_.message || _) });
@@ -131,7 +147,9 @@ MIT License
           script.setAttribute('data-name', dataName);
           script.async = false;
           script.src = url;
-          script.onload = function() { resolve(script) };
+          script.onload = function() {
+            resolve(script);
+          };
           script.onerror = function(e) {
             reject(new Error("The script \"" + (dataName || e.target.src) + "\" is not accessible"))
           }
@@ -148,6 +166,154 @@ MIT License
           return error;
         })
       }));
+    }
+
+    /**
+     * options (Object):
+     *   src (String) - Required - URL path to file
+     *   timeout (Number) - Optional - Milleseconds to wait before failing
+     *   messageId (String)- Optional - ID to use for message debugging
+     */
+    function register(options) {
+      var registration = {
+        src: options.src,
+        timeout: typeof options.timeout === 'number' ? options.timeout : 3000,  // 3 seconds
+        messageId: options.messageId || generateRandomId()
+      };
+      registrations.push(registration);
+    }
+
+    function loadRegistrations() {
+      return Promise.all(registrations
+        .map(loadRegistration)
+        .map(function(p) {
+          // catch and return errors to allow for post-processing
+          return p.catch(function(error) {
+            return error;
+          })
+        })
+      ).then(function(elementsAndErrors) {
+        // flatten results
+        var result = [];
+        elementsAndErrors.forEach(function(_) {
+          [].push[Array.isArray(_) ? 'apply' : 'call'](result, _)
+        });
+        return result;
+      });
+
+      function loadRegistration(registration) {
+        var iframe = createIframe(registration.src),
+            promises = [
+              listenForWindowMessage(registration.messageId),
+              listenForIframeLoad(iframe, registration)
+            ],
+            promiseTimer = new Promise(function(resolve, reject) {
+              var timer = setTimeout(function() {
+                reject(new Error('Registration URL not resolved within timeout (' + registration.timeout + 'ms): "' + registration.src + '"'));
+              }, registration.timeout);
+              Promise.all(promises).then(function() {
+                clearTimeout(timer);
+                resolve();
+              });
+            }),
+            result = Promise.all(promises.concat([promiseTimer])).then(function(_) {
+              // Resolve with the script tags from the window message event
+              return _[0];
+            });
+        appendTarget.appendChild(iframe);
+        return result;
+      }
+
+      function createIframe(src) {
+        var iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.style = "display:none";
+        return iframe;
+      }
+
+      function listenForIframeLoad(iframe, registration) {
+        return new Promise(function(resolve, reject) {
+          iframe.onload = onLoad;
+
+          function onLoad() {
+            var data = { id: registration.messageId, onmessage: remoteOnMessage.toString() };
+            iframe.contentWindow.postMessage(data, '*');
+            resolve();
+          }
+
+          function remoteOnMessage(event) {
+            if (event.data.id) {
+              var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
+              event.source.postMessage({
+                id: event.data.id,
+                scripts: scripts.map(serializeScript)
+              }, '*');
+            }
+
+            function serializeScript(script) {
+              var result = {},
+                  name = script.getAttribute('name'),
+                  src = script.getAttribute('src'),
+                  textContent = script.textContent;
+              if (name) {
+                result.name = name;
+              }
+              if (src) {
+                result.src = src;
+              } else {
+                result.textContent = textContent;
+              }
+              return result;
+            }
+          }
+        });
+      }
+
+      function listenForWindowMessage(messageId) {
+        return new Promise(function(resolve, reject){
+          window.addEventListener('message', onMessage);
+
+          function onMessage(event) {
+            if (event.origin === document.origin && event.data.id === messageId) {
+              window.removeEventListener('message', onMessage);
+              processMessageData(event.data);
+            }
+          }
+
+          // Promise resolution happens in here
+          function processMessageData(data) {
+            try {
+              if (Array.isArray(data.scripts)) {
+                resolve(data.scripts
+                  .map(deserializeScript)
+                  .map(function(_) {
+                    appendTarget.appendChild(_);
+                    return _;
+                  })
+                );
+              } else {
+                resolve([]);
+              }
+            } catch (error) {
+              reject(error);
+            }
+          }
+
+          function deserializeScript(script) {
+            var result = document.createElement('script');
+            result.setAttribute('type', "text/babel");
+            if (script.name) {
+              result.setAttribute('name', script.name)
+            }
+            if (script.src) {
+              result.setAttribute('src', script.src)
+            } else if (script.textContent) {
+              result.textContent = script.textContent;
+            }
+            return result;
+          }
+        });
+      }
     }
 
     function buildModuleEntries() {
@@ -250,6 +416,11 @@ MIT License
              )
     }
 
+    function generateRandomId() {
+      var min = 1, max = 999999999;
+      return '' + (Math.floor(Math.random() * (max - min + 1)) + min)
+    }
+
     //-[ Exports ]--------------------------------------------------------------
 
     self.babelConfig = babelConfig;
@@ -259,5 +430,6 @@ MIT License
 
     // Immutable
     self.welcome = WELCOME;
+    self.register = register;
   }
 })();

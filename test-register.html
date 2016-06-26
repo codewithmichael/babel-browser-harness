@@ -1,0 +1,54 @@
+<!--
+BBH ♥ Babel Browser Harness
+In-browser CDN-based ES6+ transpiling via Babel
+Copyright (c) 2016, Michael Spencer
+MIT License
+
+TEST:
+Load remote <script type="text/babel"> items into local document
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Babel Browser Harness</title>
+  </head>
+  <body>
+    <div id="app">
+
+      <!------------------------>
+      <!-- ♦ YOUR CODE HERE ♦ -->
+      <!------------------------>
+
+      <!-- Example -->
+      <script type="text/babel">
+        import { welcome } from 'bbh'
+        import { message as m1 } from 'module1'
+        import { message as m2 } from 'module2'
+
+        clear()
+        addDiv(welcome)
+        addDiv(m1)
+        addDiv(m2)
+
+        function clear() {
+          document.getElementById('app').textContent = ''
+        }
+        function addDiv(content) {
+          let div = document.createElement('div')
+          div.textContent = content
+          document.getElementById('app').appendChild(div)
+        }
+      </script>
+
+    </div>
+
+    <div id="bbh">
+      <script src="./bbh.js"></script>
+      <script>
+        bbh.register({ src: './test-register1.html' })
+      </script>
+    </div>
+
+  </body>
+</html>
