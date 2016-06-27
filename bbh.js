@@ -230,22 +230,26 @@ MIT License
       function loadRegistration(registration) {
         var iframe = createIframe(registration.src),
             promises = [
-              listenForWindowMessage(iframe, registration.messageId),
+              listenForWindowMessage(iframe, registration),
               listenForIframeLoad(iframe, registration)
             ],
             promiseTimer = new Promise(function(resolve, reject) {
               var timer = setTimeout(function() {
                 reject(new Error('Registration didn\'t resolve: "' + registration.src + '" (' + registration.timeout + 'ms)'));
               }, registration.timeout);
-              Promise.all(promises).then(function() {
-                clearTimeout(timer);
-                resolve();
-              });
+              Promise.all(promises)
+                .then(function() {
+                  clearTimeout(timer);
+                  resolve();
+                }, function(error) {
+                  // Ignore errors in timer
+                });
             }),
-            result = Promise.all(promises.concat([promiseTimer])).then(function(_) {
-              // Resolve with the script tags from the window message event
-              return _[0];
-            });
+            result = Promise.all(promises.concat([promiseTimer]))
+              .then(function(_) {
+                // Resolve with the script tags from the window message event
+                return _[0];
+              });
         appendTarget.appendChild(iframe);
         return result;
       }
@@ -269,16 +273,18 @@ MIT License
         });
       }
 
-      function listenForWindowMessage(iframe, messageId) {
+      function listenForWindowMessage(iframe, registration) {
         return new Promise(function(resolve, reject){
           window.addEventListener('message', onMessage);
 
           function onMessage(event) {
-            if (event.origin === document.origin &&
-                event.data.id === messageId)
-            {
-              window.removeEventListener('message', onMessage);
-              processMessageData(event.data);
+            if (event.data.id === registration.messageId) {
+              if (event.data.error) {
+                reject(new Error(event.data.error + ' (' + registration.src + ')'));
+              } else if (event.origin === document.origin) {
+                window.removeEventListener('message', onMessage);
+                processMessageData(event.data);
+              }
               iframe.remove();
             }
           }
@@ -323,14 +329,21 @@ MIT License
       window.addEventListener('message', registrationModeOnMessage);
 
       function registrationModeOnMessage(event) {
-        if (event.origin === document.origin && event.data.id) {
-          var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
-          event.source.postMessage({
-            id: event.data.id,
-            scripts: scripts.map(serializeScript)
-          }, '*');
-          window.removeEventListener('message', registrationModeOnMessage);
+        if (event.data.id) {
+          if (event.origin === document.origin) {
+            var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
+            event.source.postMessage({
+              id: event.data.id,
+              scripts: scripts.map(serializeScript)
+            }, '*');
+          } else {
+            event.source.postMessage({
+              id: event.data.id,
+              error: "Cross-origin registration rejected"
+            }, '*');
+          }
         }
+        window.removeEventListener('message', registrationModeOnMessage);
 
         function serializeScript(script) {
           var result = {},
