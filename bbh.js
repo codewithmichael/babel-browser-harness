@@ -69,7 +69,7 @@ MIT License
       importConfig();
 
       if (isRegistrationMode) {
-        listenForMessageFromRegister();
+        listenForRegistrationModeWindowMessage();
         return;
       }
 
@@ -84,16 +84,6 @@ MIT License
         .then(loadRegistrationsAndMergeScriptsAndErrors)
         .then(mapAndTranspile)
         .catch(logAndThrowError);
-
-      function listenForMessageFromRegister() {
-        // Listen for a message and execute onmessage request
-        window.addEventListener('message', function $(_){
-          if (_.origin === document.origin) {
-            eval('('+_.data.onmessage+')').apply(this, arguments);
-            window.removeEventListener('message', $);
-          }
-        })
-      }
 
       function loadRegistrationsAndMergeScriptsAndErrors(scriptsAndErrors) {
         // Load registrations and append elements
@@ -272,35 +262,9 @@ MIT License
           iframe.onload = onLoad;
 
           function onLoad() {
-            var data = { id: registration.messageId, onmessage: remoteOnMessage.toString() };
+            var data = { id: registration.messageId };
             iframe.contentWindow.postMessage(data, '*');
             resolve();
-          }
-
-          function remoteOnMessage(event) {
-            if (event.data.id) {
-              var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
-              event.source.postMessage({
-                id: event.data.id,
-                scripts: scripts.map(serializeScript)
-              }, '*');
-            }
-
-            function serializeScript(script) {
-              var result = {},
-                  name = script.getAttribute('name'),
-                  src = script.getAttribute('src'),
-                  textContent = script.textContent;
-              if (name) {
-                result.name = name;
-              }
-              if (src) {
-                result.src = src;
-              } else {
-                result.textContent = textContent;
-              }
-              return result;
-            }
           }
         });
       }
@@ -349,6 +313,37 @@ MIT License
             return result;
           }
         });
+      }
+    }
+
+    function listenForRegistrationModeWindowMessage() {
+      window.addEventListener('message', registrationModeOnMessage);
+
+      function registrationModeOnMessage(event) {
+        if (event.origin === document.origin && event.data.id) {
+          var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
+          event.source.postMessage({
+            id: event.data.id,
+            scripts: scripts.map(serializeScript)
+          }, '*');
+          window.removeEventListener('message', registrationModeOnMessage);
+        }
+
+        function serializeScript(script) {
+          var result = {},
+              name = script.getAttribute('name'),
+              src = script.getAttribute('src'),
+              textContent = script.textContent;
+          if (name) {
+            result.name = name;
+          }
+          if (src) {
+            result.src = src;
+          } else {
+            result.textContent = textContent;
+          }
+          return result;
+        }
       }
     }
 
