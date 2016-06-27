@@ -44,6 +44,7 @@ MIT License
         modules = [],
         registrations = [],
         isRegistrationMode = false,
+        removeRegisterScripts = true,
         removeModuleScripts = true,
         appendTarget,
         moduleEntries;
@@ -83,6 +84,7 @@ MIT License
       loadExternalScripts()
         .then(loadRegistrationsAndMergeScriptsAndErrors)
         .then(mapAndTranspile)
+        .then(removeRequestedElements)
         .catch(logAndThrowError);
 
       function loadRegistrationsAndMergeScriptsAndErrors(scriptsAndErrors) {
@@ -96,22 +98,36 @@ MIT License
       }
 
       function mapAndTranspile(scriptsAndErrors) {
-        var errors = scriptsAndErrors.filter(function(_) { return isError(_) });
-        if (errors.length) {
-          logStatus(ERROR_STRING)
-          errors.forEach(function(_) { logStatus(_.message || _) });
-        } else {
-          mapGlobals();
-          detectLeaks();
+        return new Promise(function(resolve, reject) {
+          var errors = scriptsAndErrors.filter(function(_) { return isError(_) });
+          if (errors.length) {
+            logStatus(ERROR_STRING)
+            errors.forEach(function(_) { logStatus(_.message || _) });
+          } else {
+            mapGlobals();
+            detectLeaks();
 
-          logStatus("Transpiling");
-          transpile().then(function(scripts) {
-            logStatus("Running");
-            return scripts;
-          }, function(error) {
-            logAndThrowError(error)
-          });
-        }
+            logStatus("Transpiling");
+            transpile()
+              .then(function(scripts) {
+                logStatus("Running");
+                return scripts;
+              })
+              .then(function(scripts) {
+                resolve(scripts);
+              })
+              .catch(function(error) {
+                reject(error);
+              });
+          }
+        })
+      }
+
+      function removeRequestedElements() {
+        [].slice.call(document.querySelectorAll('[data-remove="true"]') || [])
+          .forEach(function(element) {
+            element.remove()
+          })
       }
 
       function logStatus(message) {
@@ -179,12 +195,10 @@ MIT License
           script.onerror = function(e) {
             reject(new Error("The script \"" + (dataName || e.target.src) + "\" is not accessible"))
           }
-          appendTarget.appendChild(script);
           if (removeModuleScripts) {
-            setTimeout(function() {
-              script.remove();
-            }, 0);
+            script.setAttribute('data-remove', "true");
           }
+          appendTarget.appendChild(script);
         })
       }).map(function(p) {
         // catch and return errors to allow for post-processing
@@ -318,6 +332,10 @@ MIT License
               result.setAttribute('src', script.src)
             } else if (script.textContent) {
               result.textContent = script.textContent;
+            }
+            result.setAttribute('data-src', registration.src);
+            if (removeModuleScripts) {
+              result.setAttribute('data-remove', "true");
             }
             return result;
           }
@@ -474,6 +492,7 @@ MIT License
     self.babelConfig = babelConfig;
     self.modules = modules;
     self.removeModuleScripts = removeModuleScripts;
+    self.removeRegisterScripts = removeRegisterScripts;
     self.appendTarget = appendTarget;
 
     // Immutable
