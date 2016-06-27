@@ -230,7 +230,7 @@ MIT License
       function loadRegistration(registration) {
         var iframe = createIframe(registration.src),
             promises = [
-              listenForWindowMessage(registration.messageId),
+              listenForWindowMessage(iframe, registration.messageId),
               listenForIframeLoad(iframe, registration)
             ],
             promiseTimer = new Promise(function(resolve, reject) {
@@ -269,14 +269,17 @@ MIT License
         });
       }
 
-      function listenForWindowMessage(messageId) {
+      function listenForWindowMessage(iframe, messageId) {
         return new Promise(function(resolve, reject){
           window.addEventListener('message', onMessage);
 
           function onMessage(event) {
-            if (event.origin === document.origin && event.data.id === messageId) {
+            if (event.origin === document.origin &&
+                event.data.id === messageId)
+            {
               window.removeEventListener('message', onMessage);
               processMessageData(event.data);
+              iframe.remove();
             }
           }
 
