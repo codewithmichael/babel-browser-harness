@@ -43,7 +43,7 @@ MIT License
         globalLeaks = [],
         modules = [],
         registrations = [],
-        isRegistration = false,
+        isRegistrationMode = false,
         removeModuleScripts = true,
         appendTarget,
         moduleEntries;
@@ -51,16 +51,6 @@ MIT License
     //-[ Check for URL-hash-based Registration Mode ]---------------------------
 
     loadRegistrationModeFromUrlHash();
-    if (isRegistration) {
-      // Listen for a message and execute onmessage request
-      window.addEventListener('message', function $(_){
-        if (_.origin === document.origin) {
-          eval('('+_.data.onmessage+')').apply(this, arguments);
-          window.removeEventListener('message', $);
-        }
-      })
-      return;
-    }
 
     //-[ Execute On Load Complete ]---------------------------------------------
 
@@ -75,24 +65,13 @@ MIT License
 
     //-[ Methods ]--------------------------------------------------------------
 
-    function loadRegistrationModeFromUrlHash() {
-      var src, hashIndex, hash;
-      if (document.currentScript) {
-        src = document.currentScript.getAttribute('src');
-        if (src) {
-          hashIndex = src.indexOf('#');
-          if (~hashIndex) {
-            hash = src.substr(hashIndex + 1);
-            if (hash === 'registration') {
-              isRegistration = true;
-            }
-          }
-        }
-      }
-    }
-
     function execute() {
       importConfig();
+
+      if (isRegistrationMode) {
+        listenForMessageFromRegister();
+        return;
+      }
 
       console.debug(WELCOME);
 
@@ -105,6 +84,16 @@ MIT License
         .then(loadRegistrationsAndMergeScriptsAndErrors)
         .then(mapAndTranspile)
         .catch(logAndThrowError);
+
+      function listenForMessageFromRegister() {
+        // Listen for a message and execute onmessage request
+        window.addEventListener('message', function $(_){
+          if (_.origin === document.origin) {
+            eval('('+_.data.onmessage+')').apply(this, arguments);
+            window.removeEventListener('message', $);
+          }
+        })
+      }
 
       function loadRegistrationsAndMergeScriptsAndErrors(scriptsAndErrors) {
         // Load registrations and append elements
@@ -145,6 +134,22 @@ MIT License
           throw error;
         } else {
           throw new Error(error && error.message || error || "An unknown error occurred")
+        }
+      }
+    }
+
+    function loadRegistrationModeFromUrlHash() {
+      var src, hashIndex, hash;
+      if (document.currentScript) {
+        src = document.currentScript.getAttribute('src');
+        if (src) {
+          hashIndex = src.indexOf('#');
+          if (~hashIndex) {
+            hash = src.substr(hashIndex + 1);
+            if (hash === 'registration') {
+              isRegistrationMode = true;
+            }
+          }
         }
       }
     }
@@ -444,16 +449,17 @@ MIT License
       return o && typeof o === 'object' && (
                Object.prototype.toString(o) === '[object Error]' ||
                (o.name === 'Error' && typeof o.message === 'string')
-             )
+             );
     }
 
     function generateRandomId() {
       var min = 1, max = 999999999;
-      return '' + (Math.floor(Math.random() * (max - min + 1)) + min)
+      return '' + (Math.floor(Math.random() * (max - min + 1)) + min);
     }
 
     //-[ Exports ]--------------------------------------------------------------
 
+    // Configuration
     self.babelConfig = babelConfig;
     self.modules = modules;
     self.removeModuleScripts = removeModuleScripts;
@@ -461,6 +467,14 @@ MIT License
 
     // Immutable
     self.welcome = WELCOME;
+
+    // Methods
     self.register = register;
+
+    // Getters
+    self.isRegistrationMode = function() { return isRegistrationMode; };
+
+    // Setters
+    self.registrationMode = function(bool) { isRegistrationMode = bool === false ? false : true; };
   }
 })();
