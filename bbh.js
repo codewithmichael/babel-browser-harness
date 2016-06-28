@@ -271,7 +271,7 @@ MIT License
       function createIframe(src) {
         var iframe = document.createElement('iframe');
         iframe.src = src;
-        iframe.style = "display:none";
+        iframe.setAttribute('style', "display:none");
         return iframe;
       }
 
