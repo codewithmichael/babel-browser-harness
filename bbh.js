@@ -17,6 +17,7 @@ MIT License
         WELCOME = MESSAGE_PREFIX + "Hello",
         ERROR_STRING = "Error Detected :(",
         COMMENT_LINE = " " + MESSAGE_PREFIX.toUpperCase() + " BELOW THIS LINE ",
+        CROSS_ORIGIN_REGISTRATION_ERROR = "Cross-origin registration rejected",
         GLOBAL_START = Object.keys(window),
         DEFAULT_MODULES = [
           {
@@ -43,6 +44,7 @@ MIT License
         globalLeaks = [],
         modules = [],
         registrations = [],
+        allowCrossOriginRegistration = false,
         isRegistrationMode = false,
         removeRegisterScripts = true,
         removeModuleScripts = true,
@@ -295,9 +297,11 @@ MIT License
             if (event.data.id === registration.messageId) {
               if (event.data.error) {
                 reject(new Error(event.data.error + ' (' + registration.src + ')'));
-              } else if (event.origin === document.origin) {
+              } else if (event.origin === document.origin || allowCrossOriginRegistration) {
                 window.removeEventListener('message', onMessage);
                 processMessageData(event.data);
+              } else {
+                reject(new Error(CROSS_ORIGIN_REGISTRATION_ERROR + ' (' + registration.src + ')'))
               }
               iframe.remove();
             }
@@ -348,7 +352,7 @@ MIT License
 
       function registrationModeOnMessage(event) {
         if (event.data.id) {
-          if (event.origin === document.origin) {
+          if (event.origin === document.origin || allowCrossOriginRegistration) {
             var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
             event.source.postMessage({
               id: event.data.id,
@@ -357,7 +361,7 @@ MIT License
           } else {
             event.source.postMessage({
               id: event.data.id,
-              error: "Cross-origin registration rejected"
+              error: CROSS_ORIGIN_REGISTRATION_ERROR
             }, '*');
           }
         }
@@ -505,6 +509,7 @@ MIT License
     self.isRegistrationMode = function() { return isRegistrationMode; };
 
     // Setters
-    self.registrationMode = function(bool) { isRegistrationMode = bool === false ? false : true; };
+    self.registrationMode = function(bool) { isRegistrationMode = bool !== false; };
+    self.allowCrossOriginRegistration = function(bool) { allowCrossOriginRegistration = bool !== false; }
   }
 })();
