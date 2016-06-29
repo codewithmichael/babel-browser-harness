@@ -227,7 +227,7 @@ MIT License
 
             function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
             function transform(script) { return Babel.transform(script, babelConfig).code }
-            function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) { try {" + script + "\n; } catch (error) { console.debug('" + MESSAGE_PREFIX + "' + 'Error Detected :('); throw error }}); require(['" + name + "']);" }
+            function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) { try {" + script + "\n; } catch (error) { console.debug('" + MESSAGE_PREFIX + ERROR_STRING + "'); throw error }}); require(['" + name + "']);" }
             function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
             function run(element) { appendTarget.appendChild(element); return element }
 
