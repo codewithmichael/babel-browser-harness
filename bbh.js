@@ -351,7 +351,7 @@ MIT License
       window.addEventListener('message', registrationModeOnMessage);
 
       function registrationModeOnMessage(event) {
-        if (event.data.id) {
+        if (isRegistrationMode && event.data.id) {
           if (event.origin === document.origin || allowCrossOriginRegistration) {
             var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
             event.source.postMessage({

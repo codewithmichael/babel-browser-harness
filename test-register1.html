@@ -10,7 +10,14 @@ Load remote <script type="text/babel"> items into local document
 <meta charset="utf-8" />
 <!-- <script src="./bbh.js#registration"></script> -->
 <script src="./bbh.js"></script>
-<script>bbh.registrationMode()</script>
+<script>
+  bbh.registrationMode()
+
+  //// TEST - Disables registration mode after config is loaded
+  // window.addEventListener('load', function() {
+  //   bbh.registrationMode(false)
+  // })
+</script>
 
 <script type="text/babel" name="module1">
   export const message = "module1 loaded"
