@@ -1,10 +1,10 @@
-/**
-BBH ♥ Babel Browser Harness
-In-browser CDN-based ES6+ transpiling via Babel
-Copyright (c) 2016, Michael Spencer
-MIT License
-*/
-;(function() {
+/*!
+ * BBH ♥ Babel Browser Harness v0.1.0
+ * In-browser CDN-based ES6+ transpiling via Babel
+ * Copyright (c) 2016, Michael Spencer
+ * MIT License
+ */
+(function() {
   "use strict";
 
   window.bbh = new function() {
