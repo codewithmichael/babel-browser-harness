@@ -1,0 +1,28 @@
+<!--
+BBH ♥ Babel Browser Harness
+In-browser CDN-based ES6+ transpiling via Babel
+Copyright (c) 2016, Michael Spencer
+MIT License
+
+TEST:
+Load remote <script type="text/babel"> items into local document
+-->
+<meta charset="utf-8" />
+<!-- <script src="./bbh.js#registration"></script> -->
+<script src="./bbh.js"></script>
+<script>
+  bbh.registrationMode()
+
+  //// TEST - Disables registration mode after config is loaded
+  // window.addEventListener('load', function() {
+  //   bbh.registrationMode(false)
+  // })
+</script>
+
+<script type="text/babel" name="module3">
+  export const message = "module3 loaded"
+</script>
+
+<script type="text/babel" name="module4">
+  export const message = "module4 loaded"
+</script>

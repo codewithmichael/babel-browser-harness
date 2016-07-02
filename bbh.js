@@ -211,12 +211,16 @@ MIT License
     }
 
     /**
-     * options (Object):
+     * options (Object -or- Array of Objects):
      *   src (String) - Required - URL path to file
      *   timeout (Number) - Optional - Milleseconds to wait before failing
      *   messageId (String)- Optional - ID to use for message debugging
      */
     function register(options) {
+      if (Array.isArray(options)) {
+        options.forEach(function(_) { register(_) });
+        return;
+      }
       var registration = {
         src: options.src,
         timeout: typeof options.timeout === 'number' ? options.timeout : 3000,  // 3 seconds

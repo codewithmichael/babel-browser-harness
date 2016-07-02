@@ -25,11 +25,15 @@ Load remote <script type="text/babel"> items into local document
         import { welcome } from 'bbh'
         import { message as m1 } from 'module1'
         import { message as m2 } from 'module2'
+        import { message as m3 } from 'module3'
+        import { message as m4 } from 'module4'
 
         clear()
         addDiv(welcome)
         addDiv(m1)
         addDiv(m2)
+        addDiv(m3)
+        addDiv(m4)
 
         function clear() {
           document.getElementById('app').textContent = ''
@@ -46,7 +50,12 @@ Load remote <script type="text/babel"> items into local document
     <div id="bbh">
       <script src="./bbh.js"></script>
       <script>
-        bbh.register({ src: './test-register1.html' })
+        // bbh.register({ src: './test-register1.html' })
+        // bbh.register({ src: './test-register2.html' })
+        bbh.register([
+          { src: './test-register1.html' },
+          { src: './test-register2.html' }
+        ])
       </script>
     </div>
 

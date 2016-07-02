@@ -448,14 +448,23 @@ cross-origin registration, as origin security checks are performed on both ends.
 ```html
 <script src="bbh.js"></script>
 <script>
+
+  // Single File Registration
   bbh.register({ src: './file.html', timeout: 5000 })
+
+  // Multiple File Registration
+  bbh.register([
+    { src: './file1.html' },
+    { src: './file2.html' }
+  ])
+
 </script>
 ```
 
 The `register()` method is used to request the contents of an external file.
 
-`register()` accepts an `options` argument in Object format with the following
-available properties:
+`register()` accepts an `options` argument in Object format (or an Array of
+Objects) with the following available properties:
 * **src** - *REQUIRED* - String - The URL or relative path to the requested file
 * **timeout** - *OPTIONAL* - Number - (Default: `3000`) - The number of
   milliseconds to wait for a response from the registered file before giving up
