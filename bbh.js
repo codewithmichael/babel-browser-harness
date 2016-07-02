@@ -17,6 +17,7 @@ MIT License
         WELCOME = MESSAGE_PREFIX + "Hello",
         ERROR_STRING = "Error Detected :(",
         COMMENT_LINE = " " + MESSAGE_PREFIX.toUpperCase() + " BELOW THIS LINE ",
+        CROSS_ORIGIN_REGISTRATION_ERROR = "Cross-origin registration rejected",
         GLOBAL_START = Object.keys(window),
         DEFAULT_MODULES = [
           {
@@ -42,9 +43,17 @@ MIT License
         globalIgnores = [],
         globalLeaks = [],
         modules = [],
+        registrations = [],
+        allowCrossOriginRegistration = false,
+        isRegistrationMode = false,
+        removeRegisterScripts = true,
         removeModuleScripts = true,
         appendTarget,
         moduleEntries;
+
+    //-[ Check for URL-hash-based Registration Mode ]---------------------------
+
+    loadRegistrationModeFromUrlHash();
 
     //-[ Execute On Load Complete ]---------------------------------------------
 
@@ -61,31 +70,66 @@ MIT License
 
     function execute() {
       importConfig();
+
+      if (isRegistrationMode) {
+        listenForRegistrationModeWindowMessage();
+        return;
+      }
+
       console.debug(WELCOME);
+
       buildModuleEntries();
       determineAppendTarget();
       addCommentLine();
 
       logStatus("Loading Modules");
-      loadExternalScripts().then(mapAndTranspile, logAndThrowError);
+      loadExternalScripts()
+        .then(loadRegistrationsAndMergeScriptsAndErrors)
+        .then(mapAndTranspile)
+        .then(removeRequestedElements)
+        .catch(logAndThrowError);
 
-      function mapAndTranspile(loadedScripts) {
-        var errors = loadedScripts.filter(function(_) { return isError(_) });
-        if (errors.length) {
-          logStatus(ERROR_STRING)
-          errors.forEach(function(_) { logStatus(_.message || _) });
-        } else {
-          mapGlobals();
-          detectLeaks();
-
-          logStatus("Transpiling");
-          transpile().then(function(scripts) {
-            logStatus("Running");
-            return scripts;
-          }, function(error) {
-            logAndThrowError(error)
-          });
+      function loadRegistrationsAndMergeScriptsAndErrors(scriptsAndErrors) {
+        // Load registrations and append elements
+        if (!registrations.length) {
+          return scriptsAndErrors;
         }
+        return loadRegistrations().then(function(registrationScriptsAndErrors) {
+          return scriptsAndErrors.concat(registrationScriptsAndErrors)
+        });
+      }
+
+      function mapAndTranspile(scriptsAndErrors) {
+        return new Promise(function(resolve, reject) {
+          var errors = scriptsAndErrors.filter(function(_) { return isError(_) });
+          if (errors.length) {
+            logStatus(ERROR_STRING)
+            errors.forEach(function(_) { logStatus(_.message || _) });
+          } else {
+            mapGlobals();
+            detectLeaks();
+
+            logStatus("Transpiling");
+            transpile()
+              .then(function(scripts) {
+                logStatus("Running");
+                return scripts;
+              })
+              .then(function(scripts) {
+                resolve(scripts);
+              })
+              .catch(function(error) {
+                reject(error);
+              });
+          }
+        })
+      }
+
+      function removeRequestedElements() {
+        [].slice.call(document.querySelectorAll('[data-remove="true"]') || [])
+          .forEach(function(element) {
+            element.remove()
+          })
       }
 
       function logStatus(message) {
@@ -98,6 +142,22 @@ MIT License
           throw error;
         } else {
           throw new Error(error && error.message || error || "An unknown error occurred")
+        }
+      }
+    }
+
+    function loadRegistrationModeFromUrlHash() {
+      var src, hashIndex, hash;
+      if (document.currentScript) {
+        src = document.currentScript.getAttribute('src');
+        if (src) {
+          hashIndex = src.indexOf('#');
+          if (~hashIndex) {
+            hash = src.substr(hashIndex + 1);
+            if (hash === 'registration') {
+              isRegistrationMode = true;
+            }
+          }
         }
       }
     }
@@ -131,16 +191,16 @@ MIT License
           script.setAttribute('data-name', dataName);
           script.async = false;
           script.src = url;
-          script.onload = function() { resolve(script) };
+          script.onload = function() {
+            resolve(script);
+          };
           script.onerror = function(e) {
             reject(new Error("The script \"" + (dataName || e.target.src) + "\" is not accessible"))
           }
-          appendTarget.appendChild(script);
           if (removeModuleScripts) {
-            setTimeout(function() {
-              script.remove();
-            }, 0);
+            script.setAttribute('data-remove', "true");
           }
+          appendTarget.appendChild(script);
         })
       }).map(function(p) {
         // catch and return errors to allow for post-processing
@@ -148,6 +208,185 @@ MIT License
           return error;
         })
       }));
+    }
+
+    /**
+     * options (Object -or- Array of Objects):
+     *   src (String) - Required - URL path to file
+     *   timeout (Number) - Optional - Milleseconds to wait before failing
+     *   messageId (String)- Optional - ID to use for message debugging
+     */
+    function register(options) {
+      if (Array.isArray(options)) {
+        options.forEach(function(_) { register(_) });
+        return;
+      }
+      var registration = {
+        src: options.src,
+        timeout: typeof options.timeout === 'number' ? options.timeout : 3000,  // 3 seconds
+        messageId: options.messageId || generateRandomId()
+      };
+      registrations.push(registration);
+    }
+
+    function loadRegistrations() {
+      return Promise.all(registrations
+        .map(loadRegistration)
+        .map(function(p) {
+          // catch and return errors to allow for post-processing
+          return p.catch(function(error) {
+            return error;
+          })
+        })
+      ).then(function(elementsAndErrors) {
+        // flatten results
+        var result = [];
+        elementsAndErrors.forEach(function(_) {
+          [].push[Array.isArray(_) ? 'apply' : 'call'](result, _)
+        });
+        return result;
+      });
+
+      function loadRegistration(registration) {
+        var iframe = createIframe(registration.src),
+            promises = [
+              listenForWindowMessage(iframe, registration),
+              listenForIframeLoad(iframe, registration)
+            ],
+            promiseTimer = new Promise(function(resolve, reject) {
+              var timer = setTimeout(function() {
+                reject(new Error('Registration didn\'t resolve: "' + registration.src + '" (' + registration.timeout + 'ms)'));
+              }, registration.timeout);
+              Promise.all(promises)
+                .then(function() {
+                  clearTimeout(timer);
+                  resolve();
+                }, function(error) {
+                  // Ignore errors in timer
+                });
+            }),
+            result = Promise.all(promises.concat([promiseTimer]))
+              .then(function(_) {
+                // Resolve with the script tags from the window message event
+                return _[0];
+              });
+        appendTarget.appendChild(iframe);
+        return result;
+      }
+
+      function createIframe(src) {
+        var iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.setAttribute('style', "display:none");
+        return iframe;
+      }
+
+      function listenForIframeLoad(iframe, registration) {
+        return new Promise(function(resolve, reject) {
+          iframe.onload = onLoad;
+
+          function onLoad() {
+            var data = { id: registration.messageId };
+            iframe.contentWindow.postMessage(data, '*');
+            resolve();
+          }
+        });
+      }
+
+      function listenForWindowMessage(iframe, registration) {
+        return new Promise(function(resolve, reject){
+          window.addEventListener('message', onMessage);
+
+          function onMessage(event) {
+            if (event.data.id === registration.messageId) {
+              if (event.data.error) {
+                reject(new Error(event.data.error + ' (' + registration.src + ')'));
+              } else if (event.origin === document.origin || allowCrossOriginRegistration) {
+                window.removeEventListener('message', onMessage);
+                processMessageData(event.data);
+              } else {
+                reject(new Error(CROSS_ORIGIN_REGISTRATION_ERROR + ' (' + registration.src + ')'))
+              }
+              iframe.remove();
+            }
+          }
+
+          // Promise resolution happens in here
+          function processMessageData(data) {
+            try {
+              if (Array.isArray(data.scripts)) {
+                resolve(data.scripts
+                  .map(deserializeScript)
+                  .map(function(_) {
+                    appendTarget.appendChild(_);
+                    return _;
+                  })
+                );
+              } else {
+                resolve([]);
+              }
+            } catch (error) {
+              reject(error);
+            }
+          }
+
+          function deserializeScript(script) {
+            var result = document.createElement('script');
+            result.setAttribute('type', "text/babel");
+            if (script.name) {
+              result.setAttribute('name', script.name)
+            }
+            if (script.src) {
+              result.setAttribute('src', script.src)
+            } else if (script.textContent) {
+              result.textContent = script.textContent;
+            }
+            result.setAttribute('data-src', registration.src);
+            if (removeModuleScripts) {
+              result.setAttribute('data-remove', "true");
+            }
+            return result;
+          }
+        });
+      }
+    }
+
+    function listenForRegistrationModeWindowMessage() {
+      window.addEventListener('message', registrationModeOnMessage);
+
+      function registrationModeOnMessage(event) {
+        if (isRegistrationMode && event.data.id) {
+          if (event.origin === document.origin || allowCrossOriginRegistration) {
+            var scripts = [].slice.call(document.querySelectorAll('script[type="text/babel"]') || []);
+            event.source.postMessage({
+              id: event.data.id,
+              scripts: scripts.map(serializeScript)
+            }, '*');
+          } else {
+            event.source.postMessage({
+              id: event.data.id,
+              error: CROSS_ORIGIN_REGISTRATION_ERROR
+            }, '*');
+          }
+        }
+        window.removeEventListener('message', registrationModeOnMessage);
+
+        function serializeScript(script) {
+          var result = {},
+              name = script.getAttribute('name'),
+              src = script.getAttribute('src'),
+              textContent = script.textContent;
+          if (name) {
+            result.name = name;
+          }
+          if (src) {
+            result.src = src;
+          } else {
+            result.textContent = textContent;
+          }
+          return result;
+        }
+      }
     }
 
     function buildModuleEntries() {
@@ -247,17 +486,34 @@ MIT License
       return o && typeof o === 'object' && (
                Object.prototype.toString(o) === '[object Error]' ||
                (o.name === 'Error' && typeof o.message === 'string')
-             )
+             );
+    }
+
+    function generateRandomId() {
+      var min = 1, max = 999999999;
+      return '' + (Math.floor(Math.random() * (max - min + 1)) + min);
     }
 
     //-[ Exports ]--------------------------------------------------------------
 
+    // Configuration
     self.babelConfig = babelConfig;
     self.modules = modules;
     self.removeModuleScripts = removeModuleScripts;
+    self.removeRegisterScripts = removeRegisterScripts;
     self.appendTarget = appendTarget;
 
     // Immutable
     self.welcome = WELCOME;
+
+    // Methods
+    self.register = register;
+
+    // Getters
+    self.isRegistrationMode = function() { return isRegistrationMode; };
+
+    // Setters
+    self.registrationMode = function(bool) { isRegistrationMode = bool !== false; };
+    self.allowCrossOriginRegistration = function(bool) { allowCrossOriginRegistration = bool !== false; }
   }
 })();
