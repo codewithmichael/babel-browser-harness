@@ -17,10 +17,10 @@ only a single script include.
 In other words, it's a quick and easy way to spin up an ES6+ sandbox without
 worrying about Webpack, Browserify, Gulp, Grunt, etc.
 
-You don't even need a web server!
+**You don't even need a web server!**
 
 This makes it ideal for on-the-go prototyping, where you often can't transpile
-(Android, iOS), and lets you jump right into working with new technologies
+(iOS, Android), and lets you jump right into working with new technologies
 without investing precious time on system configuration.
 
 ***Example***
