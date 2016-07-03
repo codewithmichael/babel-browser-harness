@@ -1,5 +1,5 @@
 /*!
- * BBH ♥ Babel Browser Harness v0.1.0
+ * BBH ♥ Babel Browser Harness v0.1.1
  * In-browser CDN-based ES6+ transpiling via Babel
  * Copyright (c) 2016, Michael Spencer
  * MIT License
@@ -166,6 +166,7 @@
       babelConfig = self.babelConfig;
       modules = self.modules;
       removeModuleScripts = self.removeModuleScripts;
+      removeRegisterScripts = self.removeRegisterScripts;
       appendTarget = self.appendTarget;
     }
 
@@ -334,15 +335,15 @@
             var result = document.createElement('script');
             result.setAttribute('type', "text/babel");
             if (script.name) {
-              result.setAttribute('name', script.name)
+              result.setAttribute('data-name', script.name)
             }
             if (script.src) {
-              result.setAttribute('src', script.src)
+              result.setAttribute('data-src', script.src)
             } else if (script.textContent) {
               result.textContent = script.textContent;
             }
-            result.setAttribute('data-src', registration.src);
-            if (removeModuleScripts) {
+            result.setAttribute('data-register-src', registration.src);
+            if (removeRegisterScripts) {
               result.setAttribute('data-remove', "true");
             }
             return result;
@@ -373,8 +374,8 @@
 
         function serializeScript(script) {
           var result = {},
-              name = script.getAttribute('name'),
-              src = script.getAttribute('src'),
+              name = script.getAttribute('data-name') || script.getAttribute('name'),
+              src = script.getAttribute('data-src') || script.getAttribute('src'),
               textContent = script.textContent;
           if (name) {
             result.name = name;
@@ -464,13 +465,13 @@
               .then(function(_) { resolve(_) })
               .catch(function(error) { reject(error) });
 
-            function extract(element) { return element.src ? fetch(element.src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
+            function extract(element) { var src = element.getAttribute('data-src') || element.getAttribute('src'); return src ? fetch(src).then(function(res) { return res.text() }).then(function(text) { return text }) : Promise.resolve(element.textContent) }
             function transform(script) { return Babel.transform(script, babelConfig).code }
             function wrap(name, script) { return ";define('" + name + "', function(require, exports, module) { try {" + script + "\n; } catch (error) { console.debug('" + MESSAGE_PREFIX + ERROR_STRING + "'); throw error }}); require(['" + name + "']);" }
             function build(script) { var element = document.createElement('script'); element.async = false; element.textContent = script; return element }
             function run(element) { appendTarget.appendChild(element); return element }
 
-            function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('name') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
+            function extractWithName(element) { return extract(element).then(function(text) { return [element.getAttribute('data-name') || element.getAttribute('name') || element.getAttribute('data-src') || element.getAttribute('src') || modulePrefix + (++moduleIndex), text] }) }
             function transformWithName(nameAndScript) { return [nameAndScript[0], transform(nameAndScript[1])] }
             function wrapWithName(nameAndScript) { return [nameAndScript[0], wrap.apply(null, nameAndScript)] }
             function buildWithName(nameAndScript) { var name = nameAndScript[0], built = build(nameAndScript[1]); if (name) { built.setAttribute('data-name', name) } return [name, built] }
