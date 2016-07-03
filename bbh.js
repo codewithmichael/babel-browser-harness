@@ -166,6 +166,7 @@
       babelConfig = self.babelConfig;
       modules = self.modules;
       removeModuleScripts = self.removeModuleScripts;
+      removeRegisterScripts = self.removeRegisterScripts;
       appendTarget = self.appendTarget;
     }
 
@@ -342,7 +343,7 @@
               result.textContent = script.textContent;
             }
             result.setAttribute('data-file', registration.src);
-            if (removeModuleScripts) {
+            if (removeRegisterScripts) {
               result.setAttribute('data-remove', "true");
             }
             return result;
