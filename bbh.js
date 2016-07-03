@@ -1,5 +1,5 @@
 /*!
- * BBH ♥ Babel Browser Harness v0.1.0
+ * BBH ♥ Babel Browser Harness v0.1.1
  * In-browser CDN-based ES6+ transpiling via Babel
  * Copyright (c) 2016, Michael Spencer
  * MIT License
