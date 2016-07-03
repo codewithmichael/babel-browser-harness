@@ -342,7 +342,7 @@
             } else if (script.textContent) {
               result.textContent = script.textContent;
             }
-            result.setAttribute('data-file', registration.src);
+            result.setAttribute('data-register-src', registration.src);
             if (removeRegisterScripts) {
               result.setAttribute('data-remove', "true");
             }
