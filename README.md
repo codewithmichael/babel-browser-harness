@@ -617,6 +617,7 @@ FAQ
 * [Can I mix and match normal (ES5) and ES6+ scripts?](#can-i-mix-and-match-normal-es5-and-es6-scripts)
 * [Can I separate my modules into their own files?](#can-i-separate-my-modules-into-their-own-files)
 * [How can I develop with BBH on my mobile device?](#how-can-i-develop-with-bbh-on-my-mobile-device)
+* [Does BBH support valid markup attributes?](#does-bbh support-valid-markup-attributes)
 * [Is BBH "production-ready"?](#is-bbh-production-ready)
 
 ### *Why isn't my BBH using the heart (♥) symbol?*
@@ -705,6 +706,21 @@ console. You can include the latest stable version with the following:
 ```
 Note the `#startOpened` option, which ensures you'll catch BBH's startup
 messages.
+
+### *Does BBH support valid markup attributes?*
+
+***It does!*** The examples provided in the documentation often don't use
+strictly valid HTML5 attributes. If you require (or just prefer) valid HTML5
+attributes, you can replace BBH-specific tag attributes with their `data-*`
+equivalent.
+
+***Example (Setting the "data-name" attribute)***
+```html
+<!-- Use "data-name" instead of "name" -->
+<script type="text/babel" data-name="my-module-name">
+  export const message = "I'm a module!"
+</script>
+```
 
 ### *Is BBH "production-ready"?*
 
