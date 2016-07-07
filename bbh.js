@@ -393,11 +393,20 @@
 
     function buildModuleEntries() {
       var result = [];
-      [modules, DEFAULT_MODULES].forEach(function(_) {
-        if (Array.isArray(_)) {
-          [].push.apply(result, _);
+      [modules, DEFAULT_MODULES].forEach(function(moduleObjects) {
+        if (Array.isArray(moduleObjects)) {
+          [].push.apply(result, moduleObjects);
         } else {
-          Object.keys(_).forEach(function(k) { result.push(Object.assign({}, _[k], { name: k })) })
+          Object.keys(moduleObjects).forEach(function(name) {
+            var moduleObject = moduleObjects[name],
+                moduleEntry = { name: name };
+            for (var key in moduleObject) {
+              if (moduleObject.hasOwnProperty(key)) {
+                moduleEntry[key] = moduleObject[key]
+              }
+            }
+            result.push(moduleEntry);
+          })
         }
       });
       moduleEntries = result;
