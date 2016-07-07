@@ -637,7 +637,7 @@ FAQ
 * [Does BBH handle React/JSX syntax?](#does-bbh-handle-reactjsx-syntax)
 * [Can I mix and match normal (ES5) and ES6+ scripts?](#can-i-mix-and-match-normal-es5-and-es6-scripts)
 * [Can I separate my modules into their own files?](#can-i-separate-my-modules-into-their-own-files)
-* [How can I develop with BBH on my mobile device?](#how-can-i-develop-with-bbh-on-my-mobile-device)
+* [How can I develop with BBH from my mobile device?](#how-can-i-develop-with-bbh-from-my-mobile-device)
 * [Does BBH support valid markup attributes?](#does-bbh-support-valid-markup-attributes)
 * [Is BBH "production-ready"?](#is-bbh-production-ready)
 
