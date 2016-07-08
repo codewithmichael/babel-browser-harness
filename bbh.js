@@ -8,7 +8,7 @@
   "use strict";
 
   window.bbh = new function() {
-    self = this;
+    var self = this;
 
     //-[ Setup ]----------------------------------------------------------------
 
