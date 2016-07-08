@@ -11,7 +11,11 @@
     "babel",
     "browser",
     "transpile",
-    "transpiler"
+    "transpiler",
+    "es6",
+    "es2015",
+    "react",
+    "reactjs"
   ],
   "author": "Michael Spencer <code.with.michael@gmail.com>",
   "license": "MIT",

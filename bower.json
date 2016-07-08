@@ -10,7 +10,11 @@
     "babel",
     "browser",
     "transpile",
-    "transpiler"
+    "transpiler",
+    "es6",
+    "es2015",
+    "react",
+    "reactjs"
   ],
   "homepage": "https://github.com/codewithmichael/babel-browser-harness",
   "moduleType": [
