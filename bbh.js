@@ -1,5 +1,5 @@
 /*!
- * BBH ♥ Babel Browser Harness v0.1.1
+ * BBH ♥ Babel Browser Harness v0.1.2
  * In-browser CDN-based ES6+ transpiling via Babel
  * Copyright (c) 2016, Michael Spencer
  * MIT License
@@ -8,11 +8,12 @@
   "use strict";
 
   window.bbh = new function() {
-    self = this;
+    var self = this;
 
     //-[ Setup ]----------------------------------------------------------------
 
-    var MESSAGE_SYMBOL = "♥".length === 1 ? "♥" : "\u00B7",  // heart or middot
+    var VERSION = "0.1.2",
+        MESSAGE_SYMBOL = "♥".length === 1 ? "♥" : "\u00B7",  // heart or middot
         MESSAGE_PREFIX = "BBH " + MESSAGE_SYMBOL + " ",
         WELCOME = MESSAGE_PREFIX + "Hello",
         ERROR_STRING = "Error Detected :(",
@@ -392,11 +393,20 @@
 
     function buildModuleEntries() {
       var result = [];
-      [modules, DEFAULT_MODULES].forEach(function(_) {
-        if (Array.isArray(_)) {
-          [].push.apply(result, _);
+      [modules, DEFAULT_MODULES].forEach(function(moduleObjects) {
+        if (Array.isArray(moduleObjects)) {
+          [].push.apply(result, moduleObjects);
         } else {
-          Object.keys(_).forEach(function(k) { result.push(Object.assign({}, _[k], { name: k })) })
+          Object.keys(moduleObjects).forEach(function(name) {
+            var moduleObject = moduleObjects[name],
+                moduleEntry = { name: name };
+            for (var key in moduleObject) {
+              if (moduleObject.hasOwnProperty(key)) {
+                moduleEntry[key] = moduleObject[key]
+              }
+            }
+            result.push(moduleEntry);
+          })
         }
       });
       moduleEntries = result;
@@ -454,7 +464,7 @@
       return new Promise(function(resolve, reject) {
         try {
           require(['babel'], function(Babel) {
-            var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0;
+            var modulePrefix = "__bbh_", moduleIndex = 0;
 
             Promise.resolve([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
               .then(function(_) { return Promise.all(_.map(extractWithName)) })
@@ -505,6 +515,7 @@
     self.appendTarget = appendTarget;
 
     // Immutable
+    self.version = VERSION;
     self.welcome = WELCOME;
 
     // Methods

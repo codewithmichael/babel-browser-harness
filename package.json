@@ -1,6 +1,6 @@
 {
   "name": "babel-browser-harness",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "In-browser CDN-based ES6+ transpiling via Babel",
   "main": "bbh.js",
   "repository": {
@@ -11,7 +11,11 @@
     "babel",
     "browser",
     "transpile",
-    "transpiler"
+    "transpiler",
+    "es6",
+    "es2015",
+    "react",
+    "reactjs"
   ],
   "author": "Michael Spencer <code.with.michael@gmail.com>",
   "license": "MIT",
