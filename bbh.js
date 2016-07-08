@@ -12,7 +12,8 @@
 
     //-[ Setup ]----------------------------------------------------------------
 
-    var MESSAGE_SYMBOL = "♥".length === 1 ? "♥" : "\u00B7",  // heart or middot
+    var VERSION = "0.1.1",
+        MESSAGE_SYMBOL = "♥".length === 1 ? "♥" : "\u00B7",  // heart or middot
         MESSAGE_PREFIX = "BBH " + MESSAGE_SYMBOL + " ",
         WELCOME = MESSAGE_PREFIX + "Hello",
         ERROR_STRING = "Error Detected :(",
@@ -505,6 +506,7 @@
     self.appendTarget = appendTarget;
 
     // Immutable
+    self.version = VERSION;
     self.welcome = WELCOME;
 
     // Methods
