@@ -154,6 +154,23 @@ If `appendTarget` is not set, BBH will first look for an element with an
 
 * *(alternate default target `id` values: `BBH`, `__bbh`, `__BBH`)*
 
+#### `autoloadReact`
+
+***Example***
+
+* Boolean
+* Default: `true`
+
+```js
+bbh.autoloadReact = false
+```
+
+By default, if the `"react"` preset is enabled in [`babelConfig`](#babelconfig),
+the react-related libraries (`react` and `react-dom`) will automatically be
+loaded for you unless you have already specified at least one of them manually
+in [`modules`](#modules). You can disable this feature by setting
+`autoloadReact` to false.
+
 #### `babelConfig`
 
 ***Example***
@@ -191,14 +208,14 @@ bbh.modules = {
 ```js
 bbh.modules = [
   {
-    name: "react",
-    exports: 'React',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
+    name: "underscore",
+    exports: "_",
+    src: "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"
   },
   {
-    name: "react-dom",
-    exports: 'ReactDOM',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
+    name: "backbone",
+    exports: "Backbone",
+    src: "https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.3.3/backbone-min.js"
   },
 ]
 ```
@@ -688,30 +705,22 @@ itself (see below).
 ### *Does BBH handle React/JSX syntax?*
 
 ***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
-syntax, but it has to be enabled in the Babel configuration.
+syntax, but it has to be enabled in the Babel configuration:
 
-Here's a sample configuration that handles the Babel presets and module
-mapping for React and ReactDOM 15.1.0:
+***Example (Transpile ES6 (ES2015) and React)***
 ```js
-bbh.babelConfig = {
-  presets: ['es2015', 'react']
-};
-bbh.modules = [
-  {
-    name: "react",
-    exports: 'React',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
-  },
-  {
-    name: "react-dom",
-    exports: 'ReactDOM',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
-  },
-]
+bbh.babelConfig = { presets: ["es2015", "react"] };
 ```
+
+BBH will automatically import React libraries for you if the `"react"` preset is
+defined, but if you prefer a specific version, you can load it using the
+[`modules`](#modules) configuration option.
 
 See the [Configuration](#configuration) section for more details on module
 definitions and Babel presets.
+
+See [`autoloadReact`](#autoloadreact) for more information on the automatic
+loading feature for React libraries.
 
 ### *Can I mix and match normal (ES5) and ES6+ scripts?*
 
