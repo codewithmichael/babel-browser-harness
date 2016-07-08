@@ -38,7 +38,7 @@
         ],
         AUTOLOAD_MODULES = {
           "firebug-lite": {
-            ignores: 'Firebug',
+            ignores: ['Firebug', 'XMLHttpRequest'],
             src: 'https://getfirebug.com/firebug-lite.js#startOpened',
           },
           react: {
