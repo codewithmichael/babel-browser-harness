@@ -12,7 +12,7 @@
 
     //-[ Setup ]----------------------------------------------------------------
 
-    var VERSION = "0.1.1",
+    var VERSION = "0.1.2",
         MESSAGE_SYMBOL = "♥".length === 1 ? "♥" : "\u00B7",  // heart or middot
         MESSAGE_PREFIX = "BBH " + MESSAGE_SYMBOL + " ",
         WELCOME = MESSAGE_PREFIX + "Hello",
