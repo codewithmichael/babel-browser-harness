@@ -1,6 +1,6 @@
 {
   "name": "babel-browser-harness",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "In-browser CDN-based ES6+ transpiling via Babel",
   "main": "bbh.js",
   "repository": {
