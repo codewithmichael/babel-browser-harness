@@ -62,6 +62,7 @@
         isRegistrationMode = false,
         removeRegisterScripts = true,
         removeModuleScripts = true,
+        autoloadReact = true,
         appendTarget,
         moduleEntries;
 
@@ -182,7 +183,9 @@
       modules = self.modules;
       removeModuleScripts = self.removeModuleScripts;
       removeRegisterScripts = self.removeRegisterScripts;
+      autoloadReact = self.autoloadReact;
       appendTarget = self.appendTarget;
+
     }
 
     function determineAppendTarget() {
@@ -422,7 +425,11 @@
 
     function determineAutoloadModules() {
       // React Preset
-      if (babelConfig && babelConfig.presets && ~babelConfig.presets.indexOf('react')) {
+      if (autoloadReact &&
+          babelConfig &&
+          babelConfig.presets &&
+          ~babelConfig.presets.indexOf(REACT_PRESET_NAME)
+      ) {
         if (!anyModulesAreInModules(REACT_MODULE_NAMES, modules)) {
           REACT_MODULE_NAMES.forEach(function(moduleName) {
             autoloadedModules.push(createModuleEntry(moduleName, AUTOLOAD_MODULES[moduleName]));
@@ -582,6 +589,7 @@
     self.modules = modules;
     self.removeModuleScripts = removeModuleScripts;
     self.removeRegisterScripts = removeRegisterScripts;
+    self.autoloadReact = autoloadReact;
     self.appendTarget = appendTarget;
 
     // Immutable
