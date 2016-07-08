@@ -464,7 +464,7 @@
       return new Promise(function(resolve, reject) {
         try {
           require(['babel'], function(Babel) {
-            var moduleNames = [], modulePrefix = "__bbh_", moduleIndex = 0;
+            var modulePrefix = "__bbh_", moduleIndex = 0;
 
             Promise.resolve([].slice.call(document.querySelectorAll('script[type="text/babel"]') || []))
               .then(function(_) { return Promise.all(_.map(extractWithName)) })
