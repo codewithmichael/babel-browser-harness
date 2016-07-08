@@ -37,6 +37,10 @@
           },
         ],
         AUTOLOAD_MODULES = {
+          "firebug-lite": {
+            ignores: 'Firebug',
+            src: 'https://getfirebug.com/firebug-lite.js#startOpened',
+          },
           react: {
             exports: 'React',
             src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.0/react.min.js',
@@ -47,7 +51,8 @@
           },
         },
         REACT_MODULE_NAMES = ['react', 'react-dom'],
-        REACT_PRESET_NAME = 'react';
+        REACT_PRESET_NAME = 'react',
+        FIREBUG_MODULE_NAME = 'firebug-lite';
 
     var babelConfig = {
           presets: ['es2015'],
@@ -57,12 +62,14 @@
         globalLeaks = [],
         modules = [],
         autoloadedModules = [],
+        executionDelays = [],
         registrations = [],
         allowCrossOriginRegistration = false,
         isRegistrationMode = false,
         removeRegisterScripts = true,
         removeModuleScripts = true,
         autoloadReact = true,
+        enabledFirebug = false,
         appendTarget,
         moduleEntries;
 
@@ -78,7 +85,17 @@
     function loaded() {
       document.removeEventListener('DOMContentLoaded', loaded);
       window.removeEventListener('load', loaded);
-      execute();
+
+      // Log execution delay errors
+      executionDelays = executionDelays.map(function(delay) {
+        return delay.catch(function(error) {
+          console.debug(MESSAGE_PREFIX + (error.message || error));
+        })
+      });
+
+      Promise.all(executionDelays).then(function() {
+        execute();
+      });
     }
 
     //-[ Methods ]--------------------------------------------------------------
@@ -146,19 +163,6 @@
           .forEach(function(element) {
             element.remove()
           })
-      }
-
-      function logStatus(message) {
-        console.debug(MESSAGE_PREFIX + message);
-      }
-
-      function logAndThrowError(error) {
-        logStatus(ERROR_STRING);
-        if (isError(error)) {
-          throw error;
-        } else {
-          throw new Error(error && error.message || error || "An unknown error occurred")
-        }
       }
     }
 
@@ -424,6 +428,17 @@
     }
 
     function determineAutoloadModules() {
+      // Firebug
+      if (enabledFirebug) {
+        // Firebug is loaded immediately, so we don't need the src property
+        var firebugModuleObject = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME],
+            moduleObject = {};
+        Object.keys(firebugModuleObject)
+          .filter(function(key) { return key !== 'src' })
+          .forEach(function(key) { moduleObject[key] = firebugModuleObject[key] });
+        autoloadedModules.push(createModuleEntry(FIREBUG_MODULE_NAME, moduleObject));
+      }
+
       // React Preset
       if (autoloadReact &&
           babelConfig &&
@@ -529,6 +544,32 @@
       }
     }
 
+    function enableFirebug() {
+      executionDelays.push(new Promise(function(resolve, reject) {
+
+        // Load config details up to this point
+        importConfig();
+
+        var url = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src,
+            script = document.createElement('script'),
+            dataName = url.substr((url.lastIndexOf('/') || -1) + 1).split('#')[0];
+        script.setAttribute('data-name', dataName);
+        script.async = false;
+        script.src = url;
+        script.onload = function() {
+          enabledFirebug = true;
+          resolve();
+        };
+        script.onerror = function(error) {
+          reject(new Error("Unable to load Firebug"));
+        };
+        if (removeModuleScripts) {
+          script.setAttribute('data-remove', "true");
+        }
+        document.head.appendChild(script);
+      }));
+    }
+
     function transpile() {
       return new Promise(function(resolve, reject) {
         try {
@@ -560,6 +601,19 @@
           reject(error);
         }
       });
+    }
+
+    function logStatus(message) {
+      console.debug(MESSAGE_PREFIX + message);
+    }
+
+    function logAndThrowError(error) {
+      logStatus(ERROR_STRING);
+      if (isError(error)) {
+        throw error;
+      } else {
+        throw new Error(error && error.message || error || "An unknown error occurred")
+      }
     }
 
     function ensureArray(o) {
@@ -598,6 +652,7 @@
 
     // Methods
     self.register = register;
+    self.enableFirebug = enableFirebug;
 
     // Getters
     self.isRegistrationMode = function() { return isRegistrationMode; };
