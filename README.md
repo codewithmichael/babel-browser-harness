@@ -57,10 +57,29 @@ BBH will quietly include everything it needs in the background via CDN.
 Installation
 ------------
 
-Include `bbh.js` anywhere in your HTML file and open or reload the page.
+Check out or install Babel Browser Harness from one of the following locations:
 
-After a couple of seconds, happiness should appear
-***in your browser console***.
+* ***[GitHub](https://github.com/codewithmichael/babel-browser-harness):***
+  ```
+  git clone https://github.com/codewithmichael/babel-browser-harness.git
+  ```
+* ***[NPM](https://www.npmjs.com/package/babel-browser-harness):***
+  ```
+  npm install babel-browser-harness
+  ```
+* ***Bower:***
+  ```
+  bower install babel-browser-harness
+  ```
+
+Include `bbh.js` or `bbh.min.js` anywhere in your HTML file like so...
+```html
+<script src="bbh.js"></script>
+```
+...and open or reload the HTML file in your browser.
+
+After a couple of seconds, happiness should appear in your ***browser
+console***.
 
 ***Figure A.*** *"What happiness looks like"*
 ```
@@ -757,6 +776,10 @@ that focuses solely on transpiling.
 
 Credit
 ------
+*Babel Browser Harness is not affiliated with or publicly endorsed by the
+following projects or their maintainers. Project/Company/Author names are
+provided solely for the purpose of attribution.*
+
 * BBH's transpiling capability is based around
   [babel-standalone](https://github.com/Daniel15/babel-standalone)
   by Daniel Lo Nigro
