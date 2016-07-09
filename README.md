@@ -98,6 +98,10 @@ BBH ♥ Hello
 
 *(BBH is primarily developed and tested using up-to-date Google Chrome)*
 
+**Note:** If you are developing on your mobile device and don't have access to
+your browser's developer console, you can
+[enable a Firebug Lite console](#firebug-lite-developer-console).
+
 External Libraries
 ------------------
 
@@ -109,6 +113,36 @@ import and modularize them for you.
 
 For details on modularizing your libraries and other available options,
 see the [Configuration](#configuration) section.
+
+### Firebug Lite (Developer Console)
+
+[Firebug Lite](http://getfirebug.com/firebuglite) is a pared-down, in-browser
+port of Mozilla's Firebug web development tool. It includes a developer console
+and DOM inspector which can make working from your mobile device significantly
+easier.
+
+***Note:*** *Babel Browser Harness is in no way affiliated with or publicly
+endorsed by Mozilla, Parakey, or the Firebug/Firebug Lite projects or their
+maintainers.*
+
+If you are developing from your mobile device and don't have access to
+your browser's developer console, you can enable a Firebug Lite console with the
+following command (after loading `bbh.js`):
+```html
+<script>
+  bbh.enableFirebug();
+</script>
+```
+
+Alternately, if you have a local copy of Firebug Lite or prefer a specific
+version of the library, you can pass an alternate file URL to the
+`enableFirebug()` method. ***Remember*** *to provide any necessary hash options
+(such as `#startOpened`) as part of your custom url.*
+
+**Note:** While it is recommended to use the built-in `enableFirebug()` method, you
+could alternately load Firebug Lite manually via a custom `script` tag. If you choose to
+do so, it is recommended to import Firebug Lite ***before*** `bbh.js` so it can
+catch all of BBH's startup messages.
 
 Configuration
 -------------
@@ -594,6 +628,10 @@ Logging
 BBH logs it's progress as it processes your scripts. These logs are available
 in your browser console.
 
+**Note:** If you are developing on your mobile device and don't have access to
+your browser's developer console, you can
+[enable a Firebug Lite console](#firebug-lite-developer-console).
+
 ### `BBH ♥ Hello`
 BBH always begins processing with a welcome message. This message is displayed
 as soon as configuration options have been successfully determined.
@@ -745,16 +783,19 @@ system. See the [Separate Scripts](#separate-scripts) section for more details.
 If you're using a mobile editor that has a built-in, Webkit-based preview
 option—like [Working Copy](http://workingcopyapp.com/),
 [Textastic](http://www.textasticapp.com/), or
-[Coda](https://panic.com/coda-ios/)—you're ready to go. But console capabilities
-vary between editors.
+[Coda](https://panic.com/coda-ios/)—you're ready to go. Just check out or copy
+this project into your mobile editor and open `example.html` in your editor's
+preview mode to test.
 
-To provide a consistent JavaScript-based console for debugging, try the [Firebug Lite](https://getfirebug.com/firebuglite) developer
-console. You can include the latest stable version with the following:
+**Note:** Developer console capabilities can vary widely between editors. To
+provide a consistent JavaScript-based console for debugging on your mobile
+device, enable the
+[Firebug Lite developer console](#firebug-lite-developer-console) with:
 ```html
-<script src="https://getfirebug.com/firebug-lite.js#startOpened"></script>
+<script>
+  bbh.enableFirebug();
+</script>
 ```
-Note the `#startOpened` option, which ensures you'll catch BBH's startup
-messages.
 
 ### *Does BBH support valid markup attributes?*
 
@@ -794,6 +835,9 @@ provided solely for the purpose of attribution.*
   by Daniel Lo Nigro
 * Module registration is handled by the [RequireJS](http://requirejs.org/) AMD
   module loader
+* The optional developer console is part of the Mozilla/Parakey
+  [Firebug Lite](http://getfirebug.com/firebuglite) project
+  ([source on GitHub](https://github.com/firebug/firebug-lite))
 
 License
 -------
