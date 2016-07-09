@@ -210,7 +210,7 @@
       return Promise.all(urls.map(function(url) {
         return new Promise(function(resolve, reject){
           var script = document.createElement('script'),
-              dataName = url.substr((url.lastIndexOf('/') || -1) + 1);
+              dataName = getUrlFilename(url);
           script.setAttribute('data-name', dataName);
           script.async = false;
           script.src = url;
@@ -545,29 +545,32 @@
     }
 
     function enableFirebug() {
-      executionDelays.push(new Promise(function(resolve, reject) {
+      if (!enabledFirebug) {
+        enabledFirebug = true;
 
         // Load config details up to this point
         importConfig();
 
-        var url = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src,
-            script = document.createElement('script'),
-            dataName = url.substr((url.lastIndexOf('/') || -1) + 1).split('#')[0];
-        script.setAttribute('data-name', dataName);
-        script.async = false;
-        script.src = url;
-        script.onload = function() {
-          enabledFirebug = true;
-          resolve();
-        };
-        script.onerror = function(error) {
-          reject(new Error("Unable to load Firebug"));
-        };
-        if (removeModuleScripts) {
-          script.setAttribute('data-remove', "true");
-        }
-        document.head.appendChild(script);
-      }));
+        executionDelays.push(new Promise(function(resolve, reject) {
+          var url = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src,
+              script = document.createElement('script'),
+              dataName = getUrlFilename(url);
+          script.setAttribute('data-name', dataName);
+          script.async = false;
+          script.src = url;
+          script.onload = function() {
+            resolve();
+          };
+          script.onerror = function(error) {
+            enabledFirebug = false;
+            reject(new Error("Unable to load Firebug"));
+          };
+          if (removeModuleScripts) {
+            script.setAttribute('data-remove', "true");
+          }
+          document.head.appendChild(script);
+        }));
+      }
     }
 
     function transpile() {
@@ -614,6 +617,10 @@
       } else {
         throw new Error(error && error.message || error || "An unknown error occurred")
       }
+    }
+
+    function getUrlFilename(url) {
+      return url.substr((url.lastIndexOf('/') || -1) + 1).split('#')[0];
     }
 
     function ensureArray(o) {
