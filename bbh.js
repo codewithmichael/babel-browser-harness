@@ -544,26 +544,49 @@
       }
     }
 
-    function enableFirebug() {
-      if (!enabledFirebug) {
-        enabledFirebug = true;
+    function enableFirebug(url) {
+      if (enabledFirebug) { return }
 
+      enabledFirebug = true;
+      url = url || AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src;
+      loadScriptAndDelayExecution(url, onLoad, onError);
+
+      function onLoad(event, resolve, reject) {
+        resolve();
+      }
+
+      function onError(event, resolve, reject) {
+        enabledFirebug = false;
+        reject(new Error("Unable to load Firebug"));
+      }
+    }
+
+    function loadScriptAndDelayExecution(url, onLoad, onError) {
+      if (url) {
         // Load config details up to this point
         importConfig();
 
         executionDelays.push(new Promise(function(resolve, reject) {
-          var url = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src,
-              script = document.createElement('script'),
+          var script = document.createElement('script'),
               dataName = getUrlFilename(url);
-          script.setAttribute('data-name', dataName);
+          if (dataName) {
+            script.setAttribute('data-name', dataName);
+          }
           script.async = false;
           script.src = url;
-          script.onload = function() {
-            resolve();
+          script.onload = function(event) {
+            if (typeof onLoad === 'function') {
+              onLoad(event, resolve, reject);
+            } else {
+              resolve();
+            }
           };
-          script.onerror = function(error) {
-            enabledFirebug = false;
-            reject(new Error("Unable to load Firebug"));
+          script.onerror = function(event) {
+            if (typeof onError === 'function') {
+              onError(event, resolve, reject);
+            } else {
+              reject(new Error("Unable to load script: " + (dataName || url)));
+            }
           };
           if (removeModuleScripts) {
             script.setAttribute('data-remove', "true");
