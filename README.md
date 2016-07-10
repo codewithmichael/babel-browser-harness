@@ -98,6 +98,10 @@ BBH ♥ Hello
 
 *(BBH is primarily developed and tested using up-to-date Google Chrome)*
 
+**Note:** If you are developing on your mobile device and don't have access to
+your browser's developer console, you can
+[enable a Firebug Lite console](#firebug-lite-developer-console).
+
 External Libraries
 ------------------
 
@@ -109,6 +113,36 @@ import and modularize them for you.
 
 For details on modularizing your libraries and other available options,
 see the [Configuration](#configuration) section.
+
+### Firebug Lite (Developer Console)
+
+[Firebug Lite](http://getfirebug.com/firebuglite) is a pared-down, in-browser
+port of Mozilla's Firebug web development tool. It includes a developer console
+and DOM inspector which can make working from your mobile device significantly
+easier.
+
+***Note:*** *Babel Browser Harness is in no way affiliated with or publicly
+endorsed by Mozilla, Parakey, or the Firebug/Firebug Lite projects or their
+maintainers.*
+
+If you are developing from your mobile device and don't have access to
+your browser's developer console, you can enable a Firebug Lite console with the
+following command (after loading `bbh.js`):
+```html
+<script>
+  bbh.enableFirebug();
+</script>
+```
+
+Alternately, if you have a local copy of Firebug Lite or prefer a specific
+version of the library, you can pass an alternate file URL to the
+`enableFirebug()` method. ***Remember*** *to provide any necessary hash options
+(such as `#startOpened`) as part of your custom url.*
+
+**Note:** While it is recommended to use the built-in `enableFirebug()` method, you
+could alternately load Firebug Lite manually via a custom `script` tag. If you choose to
+do so, it is recommended to import Firebug Lite ***before*** `bbh.js` so it can
+catch all of BBH's startup messages.
 
 Configuration
 -------------
@@ -154,6 +188,23 @@ If `appendTarget` is not set, BBH will first look for an element with an
 
 * *(alternate default target `id` values: `BBH`, `__bbh`, `__BBH`)*
 
+#### `autoloadReact`
+
+***Example***
+
+* Boolean
+* Default: `true`
+
+```js
+bbh.autoloadReact = false
+```
+
+By default, if the `"react"` preset is enabled in [`babelConfig`](#babelconfig),
+the react-related libraries (`react` and `react-dom`) will automatically be
+loaded for you unless you have already specified at least one of them manually
+in [`modules`](#modules). You can disable this feature by setting
+`autoloadReact` to false.
+
 #### `babelConfig`
 
 ***Example***
@@ -191,14 +242,14 @@ bbh.modules = {
 ```js
 bbh.modules = [
   {
-    name: "react",
-    exports: 'React',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
+    name: "underscore",
+    exports: "_",
+    src: "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"
   },
   {
-    name: "react-dom",
-    exports: 'ReactDOM',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
+    name: "backbone",
+    exports: "Backbone",
+    src: "https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.3.3/backbone-min.js"
   },
 ]
 ```
@@ -577,6 +628,10 @@ Logging
 BBH logs it's progress as it processes your scripts. These logs are available
 in your browser console.
 
+**Note:** If you are developing on your mobile device and don't have access to
+your browser's developer console, you can
+[enable a Firebug Lite console](#firebug-lite-developer-console).
+
 ### `BBH ♥ Hello`
 BBH always begins processing with a welcome message. This message is displayed
 as soon as configuration options have been successfully determined.
@@ -688,30 +743,22 @@ itself (see below).
 ### *Does BBH handle React/JSX syntax?*
 
 ***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
-syntax, but it has to be enabled in the Babel configuration.
+syntax, but it has to be enabled in the Babel configuration:
 
-Here's a sample configuration that handles the Babel presets and module
-mapping for React and ReactDOM 15.1.0:
+***Example (Transpile ES6 (ES2015) and React)***
 ```js
-bbh.babelConfig = {
-  presets: ['es2015', 'react']
-};
-bbh.modules = [
-  {
-    name: "react",
-    exports: 'React',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
-  },
-  {
-    name: "react-dom",
-    exports: 'ReactDOM',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
-  },
-]
+bbh.babelConfig = { presets: ["es2015", "react"] };
 ```
+
+BBH will automatically import React libraries for you if the `"react"` preset is
+defined, but if you prefer a specific version, you can load it using the
+[`modules`](#modules) configuration option.
 
 See the [Configuration](#configuration) section for more details on module
 definitions and Babel presets.
+
+See [`autoloadReact`](#autoloadreact) for more information on the automatic
+loading feature for React libraries.
 
 ### *Can I mix and match normal (ES5) and ES6+ scripts?*
 
@@ -736,16 +783,19 @@ system. See the [Separate Scripts](#separate-scripts) section for more details.
 If you're using a mobile editor that has a built-in, Webkit-based preview
 option—like [Working Copy](http://workingcopyapp.com/),
 [Textastic](http://www.textasticapp.com/), or
-[Coda](https://panic.com/coda-ios/)—you're ready to go. But console capabilities
-vary between editors.
+[Coda](https://panic.com/coda-ios/)—you're ready to go. Just check out or copy
+this project into your mobile editor and open `example.html` in your editor's
+preview mode to test.
 
-To provide a consistent JavaScript-based console for debugging, try the [Firebug Lite](https://getfirebug.com/firebuglite) developer
-console. You can include the latest stable version with the following:
+**Note:** Developer console capabilities can vary widely between editors. To
+provide a consistent JavaScript-based console for debugging on your mobile
+device, enable the
+[Firebug Lite developer console](#firebug-lite-developer-console) with:
 ```html
-<script src="https://getfirebug.com/firebug-lite.js#startOpened"></script>
+<script>
+  bbh.enableFirebug();
+</script>
 ```
-Note the `#startOpened` option, which ensures you'll catch BBH's startup
-messages.
 
 ### *Does BBH support valid markup attributes?*
 
@@ -785,6 +835,9 @@ provided solely for the purpose of attribution.*
   by Daniel Lo Nigro
 * Module registration is handled by the [RequireJS](http://requirejs.org/) AMD
   module loader
+* The optional developer console is part of the Mozilla/Parakey
+  [Firebug Lite](http://getfirebug.com/firebuglite) project
+  ([source on GitHub](https://github.com/firebug/firebug-lite))
 
 License
 -------

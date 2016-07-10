@@ -23,19 +23,36 @@
         DEFAULT_MODULES = [
           {
             name: 'bbh',
-            exports: 'bbh'
+            exports: 'bbh',
           },
           {
             name: 'babel',
             exports: 'Babel',
-            src: 'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js'
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js',
           },
           {
             name: 'requirejs',
             ignores: ['__core-js_shared__', 'requirejs', 'require', 'define'],
-            src: 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js'
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js',
           },
-        ];
+        ],
+        AUTOLOAD_MODULES = {
+          "firebug-lite": {
+            ignores: ['Firebug', 'XMLHttpRequest'],
+            src: 'https://getfirebug.com/firebug-lite.js#startOpened',
+          },
+          react: {
+            exports: 'React',
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.0/react.min.js',
+          },
+          "react-dom": {
+            exports: 'ReactDOM',
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.0/react-dom.min.js',
+          },
+        },
+        REACT_MODULE_NAMES = ['react', 'react-dom'],
+        REACT_PRESET_NAME = 'react',
+        FIREBUG_MODULE_NAME = 'firebug-lite';
 
     var babelConfig = {
           presets: ['es2015'],
@@ -44,11 +61,15 @@
         globalIgnores = [],
         globalLeaks = [],
         modules = [],
+        autoloadedModules = [],
+        executionDelays = [],
         registrations = [],
         allowCrossOriginRegistration = false,
         isRegistrationMode = false,
         removeRegisterScripts = true,
         removeModuleScripts = true,
+        autoloadReact = true,
+        enabledFirebug = false,
         appendTarget,
         moduleEntries;
 
@@ -64,7 +85,17 @@
     function loaded() {
       document.removeEventListener('DOMContentLoaded', loaded);
       window.removeEventListener('load', loaded);
-      execute();
+
+      // Log execution delay errors
+      executionDelays = executionDelays.map(function(delay) {
+        return delay.catch(function(error) {
+          console.debug(MESSAGE_PREFIX + (error.message || error));
+        })
+      });
+
+      Promise.all(executionDelays).then(function() {
+        execute();
+      });
     }
 
     //-[ Methods ]--------------------------------------------------------------
@@ -79,6 +110,7 @@
 
       console.debug(WELCOME);
 
+      determineAutoloadModules();
       buildModuleEntries();
       determineAppendTarget();
       addCommentLine();
@@ -132,19 +164,6 @@
             element.remove()
           })
       }
-
-      function logStatus(message) {
-        console.debug(MESSAGE_PREFIX + message);
-      }
-
-      function logAndThrowError(error) {
-        logStatus(ERROR_STRING);
-        if (isError(error)) {
-          throw error;
-        } else {
-          throw new Error(error && error.message || error || "An unknown error occurred")
-        }
-      }
     }
 
     function loadRegistrationModeFromUrlHash() {
@@ -168,7 +187,9 @@
       modules = self.modules;
       removeModuleScripts = self.removeModuleScripts;
       removeRegisterScripts = self.removeRegisterScripts;
+      autoloadReact = self.autoloadReact;
       appendTarget = self.appendTarget;
+
     }
 
     function determineAppendTarget() {
@@ -189,7 +210,7 @@
       return Promise.all(urls.map(function(url) {
         return new Promise(function(resolve, reject){
           var script = document.createElement('script'),
-              dataName = url.substr((url.lastIndexOf('/') || -1) + 1);
+              dataName = getUrlFilename(url);
           script.setAttribute('data-name', dataName);
           script.async = false;
           script.src = url;
@@ -391,21 +412,84 @@
       }
     }
 
+    /**
+     * Transforms an existing module object into a full module entry with the
+     * expected properties and types.
+     */
+    function createModuleEntry(moduleName, moduleObject) {
+      return {
+        name: moduleName || moduleObject.name || null,
+        src: moduleObject.src || null,
+        exports: ensureArray(moduleObject.exports || []),
+        ignores: ensureArray(moduleObject.ignores || []),
+        callNoConflict: ensureBoolean(moduleObject.callNoConflict, true),
+        deleteFromWindow: ensureBoolean(moduleObject.deleteFromWindow, true),
+      }
+    }
+
+    function determineAutoloadModules() {
+      // Firebug
+      if (enabledFirebug) {
+        // Firebug is loaded immediately, so we don't need the src property
+        var firebugModuleObject = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME],
+            moduleObject = {};
+        Object.keys(firebugModuleObject)
+          .filter(function(key) { return key !== 'src' })
+          .forEach(function(key) { moduleObject[key] = firebugModuleObject[key] });
+        autoloadedModules.push(createModuleEntry(FIREBUG_MODULE_NAME, moduleObject));
+      }
+
+      // React Preset
+      if (autoloadReact &&
+          babelConfig &&
+          babelConfig.presets &&
+          ~babelConfig.presets.indexOf(REACT_PRESET_NAME)
+      ) {
+        if (!anyModulesAreInModules(REACT_MODULE_NAMES, modules)) {
+          REACT_MODULE_NAMES.forEach(function(moduleName) {
+            autoloadedModules.push(createModuleEntry(moduleName, AUTOLOAD_MODULES[moduleName]));
+          })
+        }
+      }
+    }
+
+    /** Returns true if any of the moduleNames are defined in the modules. */
+    function anyModulesAreInModules(moduleNames, modules) {
+      for (var i = 0, j = moduleNames.length; i < j; i++) {
+        if (moduleIsInModules(moduleNames[i], modules)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /** Returns true if the moduleName is defined in the modules. */
+    function moduleIsInModules(moduleName, modules) {
+      var result;
+      if (Array.isArray(modules)) {
+        result = false;
+        for (var i = 0, j = modules.length; i < j; i++) {
+          if (modules[i].name === moduleName) {
+            result = true;
+            break;
+          }
+        }
+      } else {
+        result = !!~Object.keys(modules).indexOf(moduleName);
+      }
+      return result;
+    }
+
     function buildModuleEntries() {
       var result = [];
-      [modules, DEFAULT_MODULES].forEach(function(moduleObjects) {
+      [modules, autoloadedModules, DEFAULT_MODULES].forEach(function(moduleObjects) {
         if (Array.isArray(moduleObjects)) {
-          [].push.apply(result, moduleObjects);
+          moduleObjects.forEach(function(moduleObject) {
+            result.push(createModuleEntry(moduleObject.name, moduleObject))
+          })
         } else {
-          Object.keys(moduleObjects).forEach(function(name) {
-            var moduleObject = moduleObjects[name],
-                moduleEntry = { name: name };
-            for (var key in moduleObject) {
-              if (moduleObject.hasOwnProperty(key)) {
-                moduleEntry[key] = moduleObject[key]
-              }
-            }
-            result.push(moduleEntry);
+          Object.keys(moduleObjects).forEach(function(moduleName) {
+            result.push(createModuleEntry(moduleName, moduleObjects[moduleName]));
           })
         }
       });
@@ -460,6 +544,58 @@
       }
     }
 
+    function enableFirebug(url) {
+      if (enabledFirebug) { return }
+
+      enabledFirebug = true;
+      url = url || AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src;
+      loadScriptAndDelayExecution(url, onLoad, onError);
+
+      function onLoad(event, resolve, reject) {
+        resolve();
+      }
+
+      function onError(event, resolve, reject) {
+        enabledFirebug = false;
+        reject(new Error("Unable to load Firebug"));
+      }
+    }
+
+    function loadScriptAndDelayExecution(url, onLoad, onError) {
+      if (url) {
+        // Load config details up to this point
+        importConfig();
+
+        executionDelays.push(new Promise(function(resolve, reject) {
+          var script = document.createElement('script'),
+              dataName = getUrlFilename(url);
+          if (dataName) {
+            script.setAttribute('data-name', dataName);
+          }
+          script.async = false;
+          script.src = url;
+          script.onload = function(event) {
+            if (typeof onLoad === 'function') {
+              onLoad(event, resolve, reject);
+            } else {
+              resolve();
+            }
+          };
+          script.onerror = function(event) {
+            if (typeof onError === 'function') {
+              onError(event, resolve, reject);
+            } else {
+              reject(new Error("Unable to load script: " + (dataName || url)));
+            }
+          };
+          if (removeModuleScripts) {
+            script.setAttribute('data-remove', "true");
+          }
+          document.head.appendChild(script);
+        }));
+      }
+    }
+
     function transpile() {
       return new Promise(function(resolve, reject) {
         try {
@@ -493,6 +629,31 @@
       });
     }
 
+    function logStatus(message) {
+      console.debug(MESSAGE_PREFIX + message);
+    }
+
+    function logAndThrowError(error) {
+      logStatus(ERROR_STRING);
+      if (isError(error)) {
+        throw error;
+      } else {
+        throw new Error(error && error.message || error || "An unknown error occurred")
+      }
+    }
+
+    function getUrlFilename(url) {
+      return url.substr((url.lastIndexOf('/') || -1) + 1).split('#')[0];
+    }
+
+    function ensureArray(o) {
+      return Array.isArray(o) ? o : [o];
+    }
+
+    function ensureBoolean(o, defaultValue) {
+      return typeof o === 'boolean' ? o : !!defaultValue
+    }
+
     function isError(o) {
       return o && typeof o === 'object' && (
                Object.prototype.toString(o) === '[object Error]' ||
@@ -512,6 +673,7 @@
     self.modules = modules;
     self.removeModuleScripts = removeModuleScripts;
     self.removeRegisterScripts = removeRegisterScripts;
+    self.autoloadReact = autoloadReact;
     self.appendTarget = appendTarget;
 
     // Immutable
@@ -520,6 +682,7 @@
 
     // Methods
     self.register = register;
+    self.enableFirebug = enableFirebug;
 
     // Getters
     self.isRegistrationMode = function() { return isRegistrationMode; };
