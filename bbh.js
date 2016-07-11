@@ -69,13 +69,14 @@
         removeRegisterScripts = true,
         removeModuleScripts = true,
         autoloadReact = true,
+        shouldEnableFirebug = false,
         enabledFirebug = false,
         appendTarget,
         moduleEntries;
 
     //-[ Check for URL-hash-based Registration Mode ]---------------------------
 
-    loadRegistrationModeFromUrlHash();
+    loadHashFlags();
 
     //-[ Execute On Load Complete ]---------------------------------------------
 
@@ -98,7 +99,42 @@
       });
     }
 
+    //-[ Make exports available ]-----------------------------------------------
+
+    defineExports();
+
+    //-[ Enable Firebug if requested (in URL hash) ]----------------------------
+
+    if (shouldEnableFirebug) {
+      enableFirebug();
+    }
+
     //-[ Methods ]--------------------------------------------------------------
+
+    function defineExports() {
+      // Configuration
+      self.babelConfig = babelConfig;
+      self.modules = modules;
+      self.removeModuleScripts = removeModuleScripts;
+      self.removeRegisterScripts = removeRegisterScripts;
+      self.autoloadReact = autoloadReact;
+      self.appendTarget = appendTarget;
+
+      // Immutable
+      self.version = VERSION;
+      self.welcome = WELCOME;
+
+      // Methods
+      self.register = register;
+      self.enableFirebug = enableFirebug;
+
+      // Getters
+      self.isRegistrationMode = function() { return isRegistrationMode; };
+
+      // Setters
+      self.registrationMode = function(bool) { isRegistrationMode = bool !== false; };
+      self.allowCrossOriginRegistration = function(bool) { allowCrossOriginRegistration = bool !== false; }
+    }
 
     function execute() {
       importConfig();
@@ -166,17 +202,47 @@
       }
     }
 
-    function loadRegistrationModeFromUrlHash() {
+    function loadHashFlags() {
       var src, hashIndex, hash;
       if (document.currentScript) {
         src = document.currentScript.getAttribute('src');
         if (src) {
+          src = decodeURI(src);
           hashIndex = src.indexOf('#');
           if (~hashIndex) {
             hash = src.substr(hashIndex + 1);
-            if (hash === 'registration') {
-              isRegistrationMode = true;
-            }
+
+            // Process hash flags
+            hash.split('|').forEach(function(_) {
+              if (_) {
+                // Split key/value around first equals (=) and assign flags
+                var n = _.indexOf('='), key, value;
+                _ = ~n ? [_.slice(0, n), _.slice(n + 1)] : [_];
+
+                // Parse input
+                key = _[0];
+                value = typeof _[1] === 'undefined'
+                  ? true
+                  : _[1] === "true"
+                    ? true
+                    : _[1] === "false"
+                      ? false
+                      : ~_[1].indexOf(',')
+                        ? _[1].split(',').map(function(_) { return _.trim() })
+                        : _[1];
+
+                // Apply flag
+console.log(key, value);
+                switch(key) {
+                  case "registration": isRegistrationMode = ensureBoolean(value); break;
+                  case "react": babelConfig.presets.push('react'); break;
+                  case "firebug": shouldEnableFirebug = ensureBoolean(value); break; //enableFirebug(); break;
+                  case "minify": babelConfig.minify = ensureBoolean(value); break;
+                  case "presets": babelConfig.presets = ensureArray(value); break;
+                  case "plugins": babelConfig.plugins = ensureArray(value); break;
+                }
+              }
+            })
           }
         }
       }
@@ -189,7 +255,6 @@
       removeRegisterScripts = self.removeRegisterScripts;
       autoloadReact = self.autoloadReact;
       appendTarget = self.appendTarget;
-
     }
 
     function determineAppendTarget() {
@@ -665,30 +730,5 @@
       var min = 1, max = 999999999;
       return '' + (Math.floor(Math.random() * (max - min + 1)) + min);
     }
-
-    //-[ Exports ]--------------------------------------------------------------
-
-    // Configuration
-    self.babelConfig = babelConfig;
-    self.modules = modules;
-    self.removeModuleScripts = removeModuleScripts;
-    self.removeRegisterScripts = removeRegisterScripts;
-    self.autoloadReact = autoloadReact;
-    self.appendTarget = appendTarget;
-
-    // Immutable
-    self.version = VERSION;
-    self.welcome = WELCOME;
-
-    // Methods
-    self.register = register;
-    self.enableFirebug = enableFirebug;
-
-    // Getters
-    self.isRegistrationMode = function() { return isRegistrationMode; };
-
-    // Setters
-    self.registrationMode = function(bool) { isRegistrationMode = bool !== false; };
-    self.allowCrossOriginRegistration = function(bool) { allowCrossOriginRegistration = bool !== false; }
   }
 })();
