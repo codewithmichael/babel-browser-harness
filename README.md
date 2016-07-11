@@ -157,7 +157,7 @@ global variable.
   bbh.babelConfig = {
     presets: ['es2015', 'react'],
     plugins: ['transform-object-rest-spread'],
-    minify: true
+    minified: true
   }
   bbh.modules = {
     jquery: {
@@ -212,7 +212,7 @@ in [`modules`](#modules). You can disable this feature by setting
 bbh.babelConfig = {
   presets: ['es2015', 'react'],
   plugins: ['transform-object-rest-spread'],
-  minify: true
+  minified: true
 }
 ```
 
