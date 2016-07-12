@@ -237,12 +237,16 @@ console.log(key, value);
                   case "registration": isRegistrationMode = ensureBoolean(value); break;
                   case "react": babelConfig.presets.push('react'); break;
                   case "firebug": shouldEnableFirebug = ensureBoolean(value); break; //enableFirebug(); break;
-                  case "minify": babelConfig.minify = ensureBoolean(value); break;
+                  case "minify":
+                  case "minified":
+                    babelConfig.minified = ensureBoolean(value);
+                    break;
                   case "presets": babelConfig.presets = ensureArray(value); break;
                   case "plugins": babelConfig.plugins = ensureArray(value); break;
                 }
               }
             })
+console.log(babelConfig)
           }
         }
       }
