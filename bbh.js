@@ -1,5 +1,5 @@
 /*!
- * BBH ♥ Babel Browser Harness v0.1.2
+ * BBH ♥ Babel Browser Harness v0.2.0
  * In-browser CDN-based ES6+ transpiling via Babel
  * Copyright (c) 2016, Michael Spencer
  * MIT License
@@ -12,7 +12,7 @@
 
     //-[ Setup ]----------------------------------------------------------------
 
-    var VERSION = "0.1.2",
+    var VERSION = "0.2.0",
         MESSAGE_SYMBOL = "♥".length === 1 ? "♥" : "\u00B7",  // heart or middot
         MESSAGE_PREFIX = "BBH " + MESSAGE_SYMBOL + " ",
         WELCOME = MESSAGE_PREFIX + "Hello",
