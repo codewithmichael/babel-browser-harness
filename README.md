@@ -98,6 +98,10 @@ BBH ♥ Hello
 
 *(BBH is primarily developed and tested using up-to-date Google Chrome)*
 
+**Note:** If you are developing on your mobile device and don't have access to
+your browser's developer console, you can
+[enable a Firebug Lite console](#firebug-lite-developer-console).
+
 External Libraries
 ------------------
 
@@ -110,12 +114,48 @@ import and modularize them for you.
 For details on modularizing your libraries and other available options,
 see the [Configuration](#configuration) section.
 
+### Firebug Lite (Developer Console)
+
+[Firebug Lite](http://getfirebug.com/firebuglite) is a pared-down, in-browser
+port of Mozilla's Firebug web development tool. It includes a developer console
+and DOM inspector which can make working from your mobile device significantly
+easier.
+
+***Note:*** *Babel Browser Harness is in no way affiliated with or publicly
+endorsed by Mozilla, Parakey, or the Firebug/Firebug Lite projects or their
+maintainers.*
+
+If you are developing from your mobile device and don't have access to
+your browser's developer console, you can enable a Firebug Lite console with the
+following command (after loading `bbh.js`):
+```html
+<script>
+  bbh.enableFirebug();
+</script>
+```
+
+Alternately, if you have a local copy of Firebug Lite or prefer a specific
+version of the library, you can pass an alternate file URL to the
+`enableFirebug()` method. ***Remember*** *to provide any necessary hash options
+(such as `#startOpened`) as part of your custom url.*
+
+**Note:** While it is recommended to use the built-in `enableFirebug()` method, you
+could alternately load Firebug Lite manually via a custom `script` tag. If you choose to
+do so, it is recommended to import Firebug Lite ***before*** `bbh.js` so it can
+catch all of BBH's startup messages.
+
 Configuration
 -------------
-Configuration is handled via attribute assignment or modification of the `bbh`
-global variable.
+Configuration is handled via property modification in the URL hash or using the
+`bbh` global variable. All [hash options](#hash-options) have configuration
+script equivalents.
 
-***Example***
+***Example (URL Hash - Enable React + Firebug Lite and Minify Scripts)***
+```html
+<script src="bbh.js#react|firebug|minify"></script>
+```
+
+***Example (Config Script - Prepare Babel Config and Load a Library Module)***
 ```html
 <script src="bbh.js"></script>
 ...
@@ -123,7 +163,7 @@ global variable.
   bbh.babelConfig = {
     presets: ['es2015', 'react'],
     plugins: ['transform-object-rest-spread'],
-    minify: true
+    minified: true
   }
   bbh.modules = {
     jquery: {
@@ -135,7 +175,122 @@ global variable.
 </script>
 ```
 
+### Hash Options
+
+***Note:*** *Hash options are based on
+[`document.currentScript`](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript)
+and are, therefore, browser-dependent. Most modern browsers support the feature,
+but if your development environment does not, you should use the standard
+[configuration options](#configuration-options).*
+
+Hash options act as shortcuts to commonly used
+[configuration options](#configuration-options) and developer functions such as
+[`enableFirebug()`](#firebug-lite-developer-console). This keeps configuration
+time to a minimum, reduces typed character count for mobile developers, and
+keeps all of your BBH-related information in a single tag at the location of
+import.
+
+Hash options are set by adding a hash (`#`) string to the end of the URL in the
+`src` attribute of the `script` tag you use to load BBH:
+```html
+<script src="bbh.js#react|minify"></script>
+```
+The above example enables [React](https://facebook.github.io/react/) parsing
+in Babel (in addition to the standard ES2015), and minifies transpiled scripts.
+
+Hash options are separated via the pipe (`|`) character, can contain an equals
+sign (`=`), and may have comma-separated values assigned to them where
+appropriate. When no equals sign is used, the assumed value is `true`.
+
+Options are processed sequentially and may cancel or override each other.
+
+Valid hash options are: `firebug`, `minify` (or `minified`), `react`,
+`registration`, `plugins`, `presets`.
+
+See detailed information on each hash option below.
+
+#### firebug
+* Boolean
+
+```html
+<script src="bbh.js#firebug"></script>
+<script src="bbh.js#firebug=true"></script>
+<script src="bbh.js#firebug=false"></script>
+```
+
+Enables the [Firebug Lite](#firebug-lite-developer-console) console and
+developer tool.
+
+Equivalent to calling `bbh.enableFirebug()`.
+
+#### minify
+* Boolean
+* *Alternate Option Name: `minified`*
+
+```html
+<script src="bbh.js#minify"></script>
+<script src="bbh.js#minify=true"></script>
+<script src="bbh.js#minify=false"></script>
+```
+
+Enables the `minified` flag in the [`Babel configuration`](#babelconfig)
+options.
+
+Equivalent to calling `bbh.babelConfig.minified = true`.
+
+#### react
+* Boolean
+
+```html
+<script src="bbh.js#react"></script>
+<script src="bbh.js#react=true"></script>
+<script src="bbh.js#react=false"></script>
+```
+
+Adds (or removes) the `"react"` option in the `presets` property of the
+[Babel configuration](#babelconfig).
+
+Equivalent to `bbh.babelConfig.presets.push('react')`.
+
+#### registration
+* Boolean
+
+```html
+<script src="bbh.js#registration"></script>
+<script src="bbh.js#registration=true"></script>
+<script src="bbh.js#registration=false"></script>
+```
+
+Enables or disables *registration mode* for the current file. See the
+[registration system](#registration-system) documentation for more information.
+
+Equivalent to calling [`bbh.registrationMode()`](#registrationmode).
+
+#### plugins
+* Comma-separated String
+
+```html
+<script src="bbh.js#plugins=plugin1,plugin2"></script>
+```
+
+Directly set the `plugins` used in the [Babel configuration](#babelconfig).
+
+Equivalent to calling `bbh.babelConfig.plugins = ['plugin1', 'plugin2', ...]`.
+
+#### presets* Comma-separated String
+
+```html
+<script src="bbh.js#presets=preset1,preset2"></script>
+```
+
+Directly set the `presets` used in the [Babel configuration](#babelconfig).
+
+Equivalent to calling `bbh.babelConfig.presets = ['preset1', 'preset2', ...]`.
+
 ### Configuration Options
+Configuration options are applied to the global `bbh` variable in a `script` tag
+after `bbh.js` has been included in your page.
+
 The following configuration options are available:
 
 #### `appendTarget`
@@ -154,6 +309,23 @@ If `appendTarget` is not set, BBH will first look for an element with an
 
 * *(alternate default target `id` values: `BBH`, `__bbh`, `__BBH`)*
 
+#### `autoloadReact`
+
+***Example***
+
+* Boolean
+* Default: `true`
+
+```js
+bbh.autoloadReact = false
+```
+
+By default, if the `"react"` preset is enabled in [`babelConfig`](#babelconfig),
+the react-related libraries (`react` and `react-dom`) will automatically be
+loaded for you unless you have already specified at least one of them manually
+in [`modules`](#modules). You can disable this feature by setting
+`autoloadReact` to false.
+
 #### `babelConfig`
 
 ***Example***
@@ -161,7 +333,7 @@ If `appendTarget` is not set, BBH will first look for an element with an
 bbh.babelConfig = {
   presets: ['es2015', 'react'],
   plugins: ['transform-object-rest-spread'],
-  minify: true
+  minified: true
 }
 ```
 
@@ -191,14 +363,14 @@ bbh.modules = {
 ```js
 bbh.modules = [
   {
-    name: "react",
-    exports: 'React',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
+    name: "underscore",
+    exports: "_",
+    src: "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"
   },
   {
-    name: "react-dom",
-    exports: 'ReactDOM',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
+    name: "backbone",
+    exports: "Backbone",
+    src: "https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.3.3/backbone-min.js"
   },
 ]
 ```
@@ -459,9 +631,9 @@ to load message content from `my-module`, which is declared in
 load `my-module.html`, which has been configured to run BBH in registration
 mode.
 
-**Note:** `my-module.html` used the shorthand notation to enable registration
-mode via a `#registration` hash appended to the script URL. Instead, it could
-have initiated registration mode by calling `bbh.registrationMode()` directly.
+**Note:** `my-module.html` used a [hash option](#hash-options), `#registration`,
+appended to the script `src` URL to enable registration mode. Alternately, you
+can initiate registration mode by calling `bbh.registrationMode()` directly.
 See the [`registrationMode()`](#registrationmode) method documentation for
 further details.
 
@@ -528,7 +700,7 @@ Objects) with the following available properties:
 </script>
 ```
 
-***Example (Shorthand Hash)***
+***Example (Hash Option)***
 ```html
 <script src="bbh.js#registration"></script>
 ```
@@ -537,9 +709,9 @@ The `registrationMode()` method is used to set a file to listen for a
 `register()` request from a calling file. It must be called within a file for
 that file to be loadable via the registration system.
 
-Alternately, the shorthand "hash" method may be used to enable registration
-mode. This simply entails adding `#registration` to the end of the BBH script
-URL.
+Alternately, the shorthand [hash option](#hash-options) may be used to enable
+registration mode. This simply entails adding `#registration` to the end of the
+BBH script URL.
 
 #### `allowCrossOriginRegistration()`
 
@@ -576,6 +748,10 @@ Logging
 
 BBH logs it's progress as it processes your scripts. These logs are available
 in your browser console.
+
+**Note:** If you are developing on your mobile device and don't have access to
+your browser's developer console, you can
+[enable a Firebug Lite console](#firebug-lite-developer-console).
 
 ### `BBH ♥ Hello`
 BBH always begins processing with a welcome message. This message is displayed
@@ -687,31 +863,29 @@ itself (see below).
 
 ### *Does BBH handle React/JSX syntax?*
 
-***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
-syntax, but it has to be enabled in the Babel configuration.
+***Yes!*** Because BBH is based on Babel, it *does* support
+[React](https://facebook.github.io/react/)/JSX syntax, but it has to be enabled
+via a [hash](#hash-options)/[configuration](#configuration-options) option:
 
-Here's a sample configuration that handles the Babel presets and module
-mapping for React and ReactDOM 15.1.0:
-```js
-bbh.babelConfig = {
-  presets: ['es2015', 'react']
-};
-bbh.modules = [
-  {
-    name: "react",
-    exports: 'React',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.min.js'
-  },
-  {
-    name: "react-dom",
-    exports: 'ReactDOM',
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.min.js'
-  },
-]
+***Example - Enable React Using a Hash Option***
+```html
+<script src="bbh.js#react"></script>
 ```
+
+***Example - Enable React Using a Configuration Option***
+```js
+bbh.babelConfig = { presets: ["es2015", "react"] };
+```
+
+BBH will automatically import React libraries for you once the `"react"` preset
+is defined, but if you prefer a specific version, you can load it using the
+[`modules`](#modules) configuration option.
 
 See the [Configuration](#configuration) section for more details on module
 definitions and Babel presets.
+
+See [`autoloadReact`](#autoloadreact) for more information on the automatic
+loading feature for React libraries.
 
 ### *Can I mix and match normal (ES5) and ES6+ scripts?*
 
@@ -733,19 +907,22 @@ system. See the [Separate Scripts](#separate-scripts) section for more details.
 
 ### *How can I develop with BBH from my mobile device?*
 
-If you're using a mobile editor that has a built-in, Webkit-based preview
+If you're using a mobile editor that has a built-in, WebKit-based preview
 option—like [Working Copy](http://workingcopyapp.com/),
 [Textastic](http://www.textasticapp.com/), or
-[Coda](https://panic.com/coda-ios/)—you're ready to go. But console capabilities
-vary between editors.
+[Coda](https://panic.com/coda-ios/)—you're ready to go. Just check out or copy
+this project into your mobile editor and open `example.html` in your editor's
+preview mode to test.
 
-To provide a consistent JavaScript-based console for debugging, try the [Firebug Lite](https://getfirebug.com/firebuglite) developer
-console. You can include the latest stable version with the following:
+**Note:** Developer console capabilities can vary widely between editors. To
+provide a consistent JavaScript-based console for debugging on your mobile
+device, enable the
+[Firebug Lite developer console](#firebug-lite-developer-console) with:
 ```html
-<script src="https://getfirebug.com/firebug-lite.js#startOpened"></script>
+<script>
+  bbh.enableFirebug();
+</script>
 ```
-Note the `#startOpened` option, which ensures you'll catch BBH's startup
-messages.
 
 ### *Does BBH support valid markup attributes?*
 
@@ -785,6 +962,9 @@ provided solely for the purpose of attribution.*
   by Daniel Lo Nigro
 * Module registration is handled by the [RequireJS](http://requirejs.org/) AMD
   module loader
+* The optional developer console is part of the Mozilla/Parakey
+  [Firebug Lite](http://getfirebug.com/firebuglite) project
+  ([source on GitHub](https://github.com/firebug/firebug-lite))
 
 License
 -------
