@@ -37,6 +37,10 @@
           },
         ],
         AUTOLOAD_MODULES = {
+          "firebug-lite": {
+            ignores: ['Firebug', 'XMLHttpRequest'],
+            src: 'https://getfirebug.com/firebug-lite.js#startOpened',
+          },
           react: {
             exports: 'React',
             src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.0/react.min.js',
@@ -47,7 +51,8 @@
           },
         },
         REACT_MODULE_NAMES = ['react', 'react-dom'],
-        REACT_PRESET_NAME = 'react';
+        REACT_PRESET_NAME = 'react',
+        FIREBUG_MODULE_NAME = 'firebug-lite';
 
     var babelConfig = {
           presets: ['es2015'],
@@ -57,12 +62,14 @@
         globalLeaks = [],
         modules = [],
         autoloadedModules = [],
+        executionDelays = [],
         registrations = [],
         allowCrossOriginRegistration = false,
         isRegistrationMode = false,
         removeRegisterScripts = true,
         removeModuleScripts = true,
         autoloadReact = true,
+        enabledFirebug = false,
         appendTarget,
         moduleEntries;
 
@@ -78,7 +85,17 @@
     function loaded() {
       document.removeEventListener('DOMContentLoaded', loaded);
       window.removeEventListener('load', loaded);
-      execute();
+
+      // Log execution delay errors
+      executionDelays = executionDelays.map(function(delay) {
+        return delay.catch(function(error) {
+          console.debug(MESSAGE_PREFIX + (error.message || error));
+        })
+      });
+
+      Promise.all(executionDelays).then(function() {
+        execute();
+      });
     }
 
     //-[ Methods ]--------------------------------------------------------------
@@ -147,19 +164,6 @@
             element.remove()
           })
       }
-
-      function logStatus(message) {
-        console.debug(MESSAGE_PREFIX + message);
-      }
-
-      function logAndThrowError(error) {
-        logStatus(ERROR_STRING);
-        if (isError(error)) {
-          throw error;
-        } else {
-          throw new Error(error && error.message || error || "An unknown error occurred")
-        }
-      }
     }
 
     function loadRegistrationModeFromUrlHash() {
@@ -206,7 +210,7 @@
       return Promise.all(urls.map(function(url) {
         return new Promise(function(resolve, reject){
           var script = document.createElement('script'),
-              dataName = url.substr((url.lastIndexOf('/') || -1) + 1);
+              dataName = getUrlFilename(url);
           script.setAttribute('data-name', dataName);
           script.async = false;
           script.src = url;
@@ -424,6 +428,17 @@
     }
 
     function determineAutoloadModules() {
+      // Firebug
+      if (enabledFirebug) {
+        // Firebug is loaded immediately, so we don't need the src property
+        var firebugModuleObject = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME],
+            moduleObject = {};
+        Object.keys(firebugModuleObject)
+          .filter(function(key) { return key !== 'src' })
+          .forEach(function(key) { moduleObject[key] = firebugModuleObject[key] });
+        autoloadedModules.push(createModuleEntry(FIREBUG_MODULE_NAME, moduleObject));
+      }
+
       // React Preset
       if (autoloadReact &&
           babelConfig &&
@@ -529,6 +544,58 @@
       }
     }
 
+    function enableFirebug(url) {
+      if (enabledFirebug) { return }
+
+      enabledFirebug = true;
+      url = url || AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src;
+      loadScriptAndDelayExecution(url, onLoad, onError);
+
+      function onLoad(event, resolve, reject) {
+        resolve();
+      }
+
+      function onError(event, resolve, reject) {
+        enabledFirebug = false;
+        reject(new Error("Unable to load Firebug"));
+      }
+    }
+
+    function loadScriptAndDelayExecution(url, onLoad, onError) {
+      if (url) {
+        // Load config details up to this point
+        importConfig();
+
+        executionDelays.push(new Promise(function(resolve, reject) {
+          var script = document.createElement('script'),
+              dataName = getUrlFilename(url);
+          if (dataName) {
+            script.setAttribute('data-name', dataName);
+          }
+          script.async = false;
+          script.src = url;
+          script.onload = function(event) {
+            if (typeof onLoad === 'function') {
+              onLoad(event, resolve, reject);
+            } else {
+              resolve();
+            }
+          };
+          script.onerror = function(event) {
+            if (typeof onError === 'function') {
+              onError(event, resolve, reject);
+            } else {
+              reject(new Error("Unable to load script: " + (dataName || url)));
+            }
+          };
+          if (removeModuleScripts) {
+            script.setAttribute('data-remove', "true");
+          }
+          document.head.appendChild(script);
+        }));
+      }
+    }
+
     function transpile() {
       return new Promise(function(resolve, reject) {
         try {
@@ -560,6 +627,23 @@
           reject(error);
         }
       });
+    }
+
+    function logStatus(message) {
+      console.debug(MESSAGE_PREFIX + message);
+    }
+
+    function logAndThrowError(error) {
+      logStatus(ERROR_STRING);
+      if (isError(error)) {
+        throw error;
+      } else {
+        throw new Error(error && error.message || error || "An unknown error occurred")
+      }
+    }
+
+    function getUrlFilename(url) {
+      return url.substr((url.lastIndexOf('/') || -1) + 1).split('#')[0];
     }
 
     function ensureArray(o) {
@@ -598,6 +682,7 @@
 
     // Methods
     self.register = register;
+    self.enableFirebug = enableFirebug;
 
     // Getters
     self.isRegistrationMode = function() { return isRegistrationMode; };
