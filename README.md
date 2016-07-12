@@ -54,6 +54,8 @@ without investing precious time on system configuration.
 
 BBH will quietly include everything it needs in the background via CDN.
 
+---
+
 Installation
 ------------
 
@@ -102,11 +104,13 @@ BBH ♥ Hello
 your browser's developer console, you can
 [enable a Firebug Lite console](#firebug-lite-developer-console).
 
+---
+
 External Libraries
 ------------------
 
-BBH using a module mapping system to handle external libraries such as React,
-Angular, or jQuery.
+BBH uses a module mapping system to handle external libraries such as React,
+Angular, Underscore, or jQuery.
 
 It can modularize any libraries you've already included in your page, or it can
 import and modularize them for you.
@@ -114,20 +118,25 @@ import and modularize them for you.
 For details on modularizing your libraries and other available options,
 see the [Configuration](#configuration) section.
 
+---
+
 ### Firebug Lite (Developer Console)
+
+*Babel Browser Harness is in no way affiliated with or publicly endorsed by
+Mozilla, Parakey, or the Firebug/Firebug Lite projects or their maintainers.*
 
 [Firebug Lite](http://getfirebug.com/firebuglite) is a pared-down, in-browser
 port of Mozilla's Firebug web development tool. It includes a developer console
-and DOM inspector which can make working from your mobile device significantly
+and DOM inspector which can make working from a mobile device significantly
 easier.
 
-***Note:*** *Babel Browser Harness is in no way affiliated with or publicly
-endorsed by Mozilla, Parakey, or the Firebug/Firebug Lite projects or their
-maintainers.*
-
-If you are developing from your mobile device and don't have access to
-your browser's developer console, you can enable a Firebug Lite console with the
-following command (after loading `bbh.js`):
+If you are developing from a mobile device and don't have access to your
+browser's developer console, you can enable a Firebug Lite console right from
+your script import with the [hash option](#hash-options):
+```html
+<script src="bbh.js#firebug"></script>
+```
+...or with the following command (after loading `bbh.js`)...
 ```html
 <script>
   bbh.enableFirebug();
@@ -136,18 +145,21 @@ following command (after loading `bbh.js`):
 
 Alternately, if you have a local copy of Firebug Lite or prefer a specific
 version of the library, you can pass an alternate file URL to the
-`enableFirebug()` method. ***Remember*** *to provide any necessary hash options
+`enableFirebug()` method. *You MUST provide any necessary hash options
 (such as `#startOpened`) as part of your custom url.*
 
-**Note:** While it is recommended to use the built-in `enableFirebug()` method, you
-could alternately load Firebug Lite manually via a custom `script` tag. If you choose to
-do so, it is recommended to import Firebug Lite ***before*** `bbh.js` so it can
-catch all of BBH's startup messages.
+**Note:** While it is recommended to use the built-in hash option or
+`enableFirebug()` method, you can alternately load Firebug Lite manually via a
+custom `script` tag. If you choose to do so, it is recommended to import
+Firebug Lite ***before*** `bbh.js` so it can catch all of BBH's startup
+messages.
+
+---
 
 Configuration
 -------------
-Configuration is handled via property modification in the URL hash or using the
-`bbh` global variable. All [hash options](#hash-options) have configuration
+Configuration is handled through property modification in the URL hash or using
+the `bbh` global variable. All [hash options](#hash-options) have configuration
 script equivalents.
 
 ***Example (URL Hash - Enable React + Firebug Lite and Minify Scripts)***
@@ -175,20 +187,15 @@ script equivalents.
 </script>
 ```
 
+---
+
 ### Hash Options
 
-***Note:*** *Hash options are based on
-[`document.currentScript`](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript)
-and are, therefore, browser-dependent. Most modern browsers support the feature,
-but if your development environment does not, you should use the standard
-[configuration options](#configuration-options).*
-
-Hash options act as shortcuts to commonly used
-[configuration options](#configuration-options) and developer functions such as
-[`enableFirebug()`](#firebug-lite-developer-console). This keeps configuration
-time to a minimum, reduces typed character count for mobile developers, and
-keeps all of your BBH-related information in a single tag at the location of
-import.
+Hash options act as shortcuts to commonly used developer functions and
+[configuration options](#configuration-options). This keeps configuration time
+to a minimum, reduces typed character count for mobile developers, and can
+retain all of your BBH information in a single `script` tag at the location of
+import (for common configurations).
 
 Hash options are set by adding a hash (`#`) string to the end of the URL in the
 `src` attribute of the `script` tag you use to load BBH:
@@ -198,18 +205,26 @@ Hash options are set by adding a hash (`#`) string to the end of the URL in the
 The above example enables [React](https://facebook.github.io/react/) parsing
 in Babel (in addition to the standard ES2015), and minifies transpiled scripts.
 
-Hash options are separated via the pipe (`|`) character, can contain an equals
-sign (`=`), and may have comma-separated values assigned to them where
-appropriate. When no equals sign is used, the assumed value is `true`.
+Hash options are separated via the pipe (`|`) character and may contain an
+equals sign (`=`). They can also have comma-separated values assigned to them
+when appropriate.
 
-Options are processed sequentially and may cancel or override each other.
+When no equals sign is used, the assumed value is `true`.
 
 Valid hash options are: `firebug`, `minify` (or `minified`), `react`,
 `registration`, `plugins`, `presets`.
 
-See detailed information on each hash option below.
+Options are processed sequentially and may cancel or override each other.
 
-#### firebug
+*See detailed information on each hash option below.*
+
+**Note:** Hash options are based on
+[`document.currentScript`](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript)
+and are, therefore, browser-dependent. Most modern browsers support the feature,
+but if your development environment does not, you should use the standard
+[configuration options](#configuration-options).
+
+#### `firebug`
 * Boolean
 
 ```html
@@ -223,9 +238,9 @@ developer tool.
 
 Equivalent to calling `bbh.enableFirebug()`.
 
-#### minify
+#### `minify`
 * Boolean
-* *Alternate Option Name: `minified`*
+* *Alternate option name: `minified`*
 
 ```html
 <script src="bbh.js#minify"></script>
@@ -238,7 +253,7 @@ options.
 
 Equivalent to calling `bbh.babelConfig.minified = true`.
 
-#### react
+#### `react`
 * Boolean
 
 ```html
@@ -247,12 +262,12 @@ Equivalent to calling `bbh.babelConfig.minified = true`.
 <script src="bbh.js#react=false"></script>
 ```
 
-Adds (or removes) the `"react"` option in the `presets` property of the
+Adds or removes the `"react"` option in the `presets` property of the
 [Babel configuration](#babelconfig).
 
 Equivalent to `bbh.babelConfig.presets.push('react')`.
 
-#### registration
+#### `registration`
 * Boolean
 
 ```html
@@ -261,12 +276,14 @@ Equivalent to `bbh.babelConfig.presets.push('react')`.
 <script src="bbh.js#registration=false"></script>
 ```
 
-Enables or disables *registration mode* for the current file. See the
-[registration system](#registration-system) documentation for more information.
+Enables or disables *registration mode* for the current file.
+
+See the [registration system](#registration-system) documentation for more
+information.
 
 Equivalent to calling [`bbh.registrationMode()`](#registrationmode).
 
-#### plugins
+#### `plugins`
 * Comma-separated String
 
 ```html
@@ -277,7 +294,8 @@ Directly set the `plugins` used in the [Babel configuration](#babelconfig).
 
 Equivalent to calling `bbh.babelConfig.plugins = ['plugin1', 'plugin2', ...]`.
 
-#### presets* Comma-separated String
+#### `presets`
+* Comma-separated String
 
 ```html
 <script src="bbh.js#presets=preset1,preset2"></script>
@@ -287,9 +305,12 @@ Directly set the `presets` used in the [Babel configuration](#babelconfig).
 
 Equivalent to calling `bbh.babelConfig.presets = ['preset1', 'preset2', ...]`.
 
+---
+
 ### Configuration Options
-Configuration options are applied to the global `bbh` variable in a `script` tag
-after `bbh.js` has been included in your page.
+Configuration options work in all supported modern browsers. They are applied to
+the global `bbh` variable in a `script` tag after `bbh.js` has been included in
+your page.
 
 The following configuration options are available:
 
@@ -310,21 +331,20 @@ If `appendTarget` is not set, BBH will first look for an element with an
 * *(alternate default target `id` values: `BBH`, `__bbh`, `__BBH`)*
 
 #### `autoloadReact`
-
-***Example***
-
 * Boolean
 * Default: `true`
 
+***Example***
 ```js
 bbh.autoloadReact = false
 ```
 
 By default, if the `"react"` preset is enabled in [`babelConfig`](#babelconfig),
 the react-related libraries (`react` and `react-dom`) will automatically be
-loaded for you unless you have already specified at least one of them manually
-in [`modules`](#modules). You can disable this feature by setting
-`autoloadReact` to false.
+loaded for you, unless you have already specified at least one of them manually
+in [`modules`](#modules).
+
+You can disable this feature by setting `autoloadReact` to false.
 
 #### `babelConfig`
 
@@ -498,6 +518,8 @@ easy debugging.
 Set the `removeRegisterScripts` property to `false` to retain these imported
 `script` tags.
 
+---
+
 Separate Scripts
 ----------------
 
@@ -505,6 +527,8 @@ Projects can grow quickly, and it is often desirable to break your scripts out
 into separate files. BBH provides two systems for accomplishing this
 task—[direct script imports](#direct-script-imports) and an internal
 [registration system](#registration-system).
+
+---
 
 ### Direct Script Imports
 
@@ -551,6 +575,8 @@ If you choose to run a local web server, here are a couple of simple options:
 * Alternately, if you have [Node.js](https://nodejs.org/) installed, you can use
   the [http-server](https://www.npmjs.com/package/http-server) package to fire
   up a simple web server.
+
+---
 
 ### Registration System
 
@@ -628,16 +654,17 @@ Those elements are then deserialized for transpiling in the calling document.
 In the above example, the main script in `index.html` wants
 to load message content from `my-module`, which is declared in
 `my-module.html`. To accomplish this, `register()` is used to
-load `my-module.html`, which has been configured to run BBH in registration
-mode.
+load `my-module.html`, which has been configured to run BBH in *registration
+mode*.
 
 **Note:** `my-module.html` used a [hash option](#hash-options), `#registration`,
-appended to the script `src` URL to enable registration mode. Alternately, you
-can initiate registration mode by calling `bbh.registrationMode()` directly.
-See the [`registrationMode()`](#registrationmode) method documentation for
-further details.
+appended to the `script` tag's `src` URL to enable registration mode.
+Alternately, you can initiate registration mode by calling
+`bbh.registrationMode()` directly. See the
+[`registrationMode()`](#registrationmode) method documentation for further
+details.
 
-**Cross-Origin Issues**
+#### Cross-Origin Issues
 
 If you are loading modules from a remote server or are using a local server with
 inconsistent origin declarations (such as *many* mobile device implementations),
@@ -686,7 +713,12 @@ Objects) with the following available properties:
 
 #### `registrationMode()`
 
-***Example (Enable/Disable)***
+***Example (Hash Option)***
+```html
+<script src="bbh.js#registration"></script>
+```
+
+***Example (Config Option)***
 ```html
 <script src="bbh.js"></script>
 <script>
@@ -700,18 +732,13 @@ Objects) with the following available properties:
 </script>
 ```
 
-***Example (Hash Option)***
-```html
-<script src="bbh.js#registration"></script>
-```
-
 The `registrationMode()` method is used to set a file to listen for a
 `register()` request from a calling file. It must be called within a file for
 that file to be loadable via the registration system.
 
 Alternately, the shorthand [hash option](#hash-options) may be used to enable
 registration mode. This simply entails adding `#registration` to the end of the
-BBH script URL.
+BBH `script` tag's `src` URL.
 
 #### `allowCrossOriginRegistration()`
 
@@ -743,6 +770,8 @@ cross-origin registration, as origin security checks are performed on both ends.
 development or on a shared development server, as it effectively makes any
 scripts configured for "registration mode" publicly available.
 
+---
+
 Logging
 -------
 
@@ -754,8 +783,8 @@ your browser's developer console, you can
 [enable a Firebug Lite console](#firebug-lite-developer-console).
 
 ### `BBH ♥ Hello`
-BBH always begins processing with a welcome message. This message is displayed
-as soon as configuration options have been successfully determined.
+BBH begins processing with a welcome message. This message is displayed as soon
+as configuration options have been successfully determined.
 
 ### `BBH ♥ Loading Modules`
 This message designates that requested scripts from the `modules` configuration
@@ -825,6 +854,8 @@ scripts off to your browser, and is running away.
 
 If any errors occur at this point, they are entirely your fault :D
 
+---
+
 FAQ
 ---
 
@@ -865,7 +896,7 @@ itself (see below).
 
 ***Yes!*** Because BBH is based on Babel, it *does* support
 [React](https://facebook.github.io/react/)/JSX syntax, but it has to be enabled
-via a [hash](#hash-options)/[configuration](#configuration-options) option:
+via a [hash](#hash-options) or [configuration](#configuration-options) option:
 
 ***Example - Enable React Using a Hash Option***
 ```html
@@ -908,16 +939,24 @@ system. See the [Separate Scripts](#separate-scripts) section for more details.
 ### *How can I develop with BBH from my mobile device?*
 
 If you're using a mobile editor that has a built-in, WebKit-based preview
-option—like [Working Copy](http://workingcopyapp.com/),
+option (like [Working Copy](http://workingcopyapp.com/),
 [Textastic](http://www.textasticapp.com/), or
-[Coda](https://panic.com/coda-ios/)—you're ready to go. Just check out or copy
-this project into your mobile editor and open `example.html` in your editor's
-preview mode to test.
+[Coda](https://panic.com/coda-ios/)) then you're ready to go. Just check out or
+copy this project into your mobile editor and open `example.html` in your
+editor's preview mode to test.
 
 **Note:** Developer console capabilities can vary widely between editors. To
 provide a consistent JavaScript-based console for debugging on your mobile
 device, enable the
-[Firebug Lite developer console](#firebug-lite-developer-console) with:
+[Firebug Lite developer console](#firebug-lite-developer-console) with a
+[hash](#hash-options) or [configuration](#configuration-options) option:
+
+***Example - Enable Firebug Lite with a Hash Option***
+```html
+<script src="bbh.js#firebug"></script>
+```
+
+***Example - Enable Firebug Lite with a Config Option***
 ```html
 <script>
   bbh.enableFirebug();
@@ -951,6 +990,8 @@ library solution like
 [babel-standalone](https://github.com/Daniel15/babel-standalone)
 that focuses solely on transpiling.
 
+---
+
 Credit
 ------
 *Babel Browser Harness is not affiliated with or publicly endorsed by the
@@ -965,6 +1006,8 @@ provided solely for the purpose of attribution.*
 * The optional developer console is part of the Mozilla/Parakey
   [Firebug Lite](http://getfirebug.com/firebuglite) project
   ([source on GitHub](https://github.com/firebug/firebug-lite))
+
+---
 
 License
 -------
