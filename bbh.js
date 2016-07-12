@@ -215,9 +215,11 @@
             // Process hash flags
             hash.split('|').forEach(function(_) {
               if (_) {
+                _ = _.trim();
+
                 // Split key/value around first equals (=) and assign flags
                 var n = _.indexOf('='), key, value;
-                _ = ~n ? [_.slice(0, n), _.slice(n + 1)] : [_];
+                _ = ~n ? [_.slice(0, n).trim(), _.slice(n + 1).trim()] : [_];
 
                 // Parse input
                 key = _[0];
