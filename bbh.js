@@ -221,32 +221,24 @@
 
                 // Parse input
                 key = _[0];
-                value = typeof _[1] === 'undefined'
-                  ? true
-                  : _[1] === "true"
-                    ? true
-                    : _[1] === "false"
-                      ? false
-                      : ~_[1].indexOf(',')
-                        ? _[1].split(',').map(function(_) { return _.trim() })
-                        : _[1];
+                value = typeof _[1] === 'undefined' ? true
+                      : _[1] === "true" ? true
+                      : _[1] === "false" ? false
+                      : ~_[1].indexOf(',') ? _[1].split(',').map(function(_) { return _.trim() })
+                      : _[1];
 
                 // Apply flag
-console.log(key, value);
                 switch(key) {
                   case "registration": isRegistrationMode = ensureBoolean(value); break;
                   case "react": babelConfig.presets.push('react'); break;
-                  case "firebug": shouldEnableFirebug = ensureBoolean(value); break; //enableFirebug(); break;
-                  case "minify":
-                  case "minified":
-                    babelConfig.minified = ensureBoolean(value);
-                    break;
+                  case "firebug": shouldEnableFirebug = ensureBoolean(value); break;
+                  case "minify": // fall-through
+                  case "minified": babelConfig.minified = ensureBoolean(value); break;
                   case "presets": babelConfig.presets = ensureArray(value); break;
                   case "plugins": babelConfig.plugins = ensureArray(value); break;
                 }
               }
             })
-console.log(babelConfig)
           }
         }
       }
