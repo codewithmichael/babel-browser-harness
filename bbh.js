@@ -230,7 +230,16 @@
                 // Apply flag
                 switch(key) {
                   case "registration": isRegistrationMode = ensureBoolean(value); break;
-                  case "react": babelConfig.presets.push('react'); break;
+                  case "react":
+                    if (ensureBoolean(value)) {
+                      if (!Array.isArray(babelConfig.presets)) {
+                        babelConfig.presets = [];
+                      }
+                      babelConfig.presets.push('react');
+                    } else {
+                      babelConfig.presets = (babelConfig.presets || []).filter(function(preset) { return preset !== 'react' });
+                    }
+                    break;
                   case "firebug": shouldEnableFirebug = ensureBoolean(value); break;
                   case "minify": // fall-through
                   case "minified": babelConfig.minified = ensureBoolean(value); break;
