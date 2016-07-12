@@ -146,10 +146,16 @@ catch all of BBH's startup messages.
 
 Configuration
 -------------
-Configuration is handled via attribute assignment or modification of the `bbh`
-global variable.
+Configuration is handled via property modification in the URL hash or using the
+`bbh` global variable. All [hash options](#hash-options) have configuration
+script equivalents.
 
-***Example***
+***Example (URL Hash - Enable React + Firebug Lite and Minify Scripts)***
+```html
+<script src="bbh.js#react|firebug|minify"></script>
+```
+
+***Example (Config Script - Prepare Babel Config and Load a Library Module)***
 ```html
 <script src="bbh.js"></script>
 ...
@@ -157,7 +163,7 @@ global variable.
   bbh.babelConfig = {
     presets: ['es2015', 'react'],
     plugins: ['transform-object-rest-spread'],
-    minify: true
+    minified: true
   }
   bbh.modules = {
     jquery: {
@@ -169,7 +175,122 @@ global variable.
 </script>
 ```
 
+### Hash Options
+
+***Note:*** *Hash options are based on
+[`document.currentScript`](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript)
+and are, therefore, browser-dependent. Most modern browsers support the feature,
+but if your development environment does not, you should use the standard
+[configuration options](#configuration-options).*
+
+Hash options act as shortcuts to commonly used
+[configuration options](#configuration-options) and developer functions such as
+[`enableFirebug()`](#firebug-lite-developer-console). This keeps configuration
+time to a minimum, reduces typed character count for mobile developers, and
+keeps all of your BBH-related information in a single tag at the location of
+import.
+
+Hash options are set by adding a hash (`#`) string to the end of the URL in the
+`src` attribute of the `script` tag you use to load BBH:
+```html
+<script src="bbh.js#react|minify"></script>
+```
+The above example enables [React](https://facebook.github.io/react/) parsing
+in Babel (in addition to the standard ES2015), and minifies transpiled scripts.
+
+Hash options are separated via the pipe (`|`) character, can contain an equals
+sign (`=`), and may have comma-separated values assigned to them where
+appropriate. When no equals sign is used, the assumed value is `true`.
+
+Options are processed sequentially and may cancel or override each other.
+
+Valid hash options are: `firebug`, `minify` (or `minified`), `react`,
+`registration`, `plugins`, `presets`.
+
+See detailed information on each hash option below.
+
+#### firebug
+* Boolean
+
+```html
+<script src="bbh.js#firebug"></script>
+<script src="bbh.js#firebug=true"></script>
+<script src="bbh.js#firebug=false"></script>
+```
+
+Enables the [Firebug Lite](#firebug-lite-developer-console) console and
+developer tool.
+
+Equivalent to calling `bbh.enableFirebug()`.
+
+#### minify
+* Boolean
+* *Alternate Option Name: `minified`*
+
+```html
+<script src="bbh.js#minify"></script>
+<script src="bbh.js#minify=true"></script>
+<script src="bbh.js#minify=false"></script>
+```
+
+Enables the `minified` flag in the [`Babel configuration`](#babelconfig)
+options.
+
+Equivalent to calling `bbh.babelConfig.minified = true`.
+
+#### react
+* Boolean
+
+```html
+<script src="bbh.js#react"></script>
+<script src="bbh.js#react=true"></script>
+<script src="bbh.js#react=false"></script>
+```
+
+Adds (or removes) the `"react"` option in the `presets` property of the
+[Babel configuration](#babelconfig).
+
+Equivalent to `bbh.babelConfig.presets.push('react')`.
+
+#### registration
+* Boolean
+
+```html
+<script src="bbh.js#registration"></script>
+<script src="bbh.js#registration=true"></script>
+<script src="bbh.js#registration=false"></script>
+```
+
+Enables or disables *registration mode* for the current file. See the
+[registration system](#registration-system) documentation for more information.
+
+Equivalent to calling [`bbh.registrationMode()`](#registrationmode).
+
+#### plugins
+* Comma-separated String
+
+```html
+<script src="bbh.js#plugins=plugin1,plugin2"></script>
+```
+
+Directly set the `plugins` used in the [Babel configuration](#babelconfig).
+
+Equivalent to calling `bbh.babelConfig.plugins = ['plugin1', 'plugin2', ...]`.
+
+#### presets* Comma-separated String
+
+```html
+<script src="bbh.js#presets=preset1,preset2"></script>
+```
+
+Directly set the `presets` used in the [Babel configuration](#babelconfig).
+
+Equivalent to calling `bbh.babelConfig.presets = ['preset1', 'preset2', ...]`.
+
 ### Configuration Options
+Configuration options are applied to the global `bbh` variable in a `script` tag
+after `bbh.js` has been included in your page.
+
 The following configuration options are available:
 
 #### `appendTarget`
@@ -212,7 +333,7 @@ in [`modules`](#modules). You can disable this feature by setting
 bbh.babelConfig = {
   presets: ['es2015', 'react'],
   plugins: ['transform-object-rest-spread'],
-  minify: true
+  minified: true
 }
 ```
 
@@ -510,9 +631,9 @@ to load message content from `my-module`, which is declared in
 load `my-module.html`, which has been configured to run BBH in registration
 mode.
 
-**Note:** `my-module.html` used the shorthand notation to enable registration
-mode via a `#registration` hash appended to the script URL. Instead, it could
-have initiated registration mode by calling `bbh.registrationMode()` directly.
+**Note:** `my-module.html` used a [hash option](#hash-options), `#registration`,
+appended to the script `src` URL to enable registration mode. Alternately, you
+can initiate registration mode by calling `bbh.registrationMode()` directly.
 See the [`registrationMode()`](#registrationmode) method documentation for
 further details.
 
@@ -579,7 +700,7 @@ Objects) with the following available properties:
 </script>
 ```
 
-***Example (Shorthand Hash)***
+***Example (Hash Option)***
 ```html
 <script src="bbh.js#registration"></script>
 ```
@@ -588,9 +709,9 @@ The `registrationMode()` method is used to set a file to listen for a
 `register()` request from a calling file. It must be called within a file for
 that file to be loadable via the registration system.
 
-Alternately, the shorthand "hash" method may be used to enable registration
-mode. This simply entails adding `#registration` to the end of the BBH script
-URL.
+Alternately, the shorthand [hash option](#hash-options) may be used to enable
+registration mode. This simply entails adding `#registration` to the end of the
+BBH script URL.
 
 #### `allowCrossOriginRegistration()`
 
@@ -742,16 +863,22 @@ itself (see below).
 
 ### *Does BBH handle React/JSX syntax?*
 
-***Yes!*** Because BBH is based on Babel, it *does* support React/JSX
-syntax, but it has to be enabled in the Babel configuration:
+***Yes!*** Because BBH is based on Babel, it *does* support
+[React](https://facebook.github.io/react/)/JSX syntax, but it has to be enabled
+via a [hash](#hash-options)/[configuration](#configuration-options) option:
 
-***Example (Transpile ES6 (ES2015) and React)***
+***Example - Enable React Using a Hash Option***
+```html
+<script src="bbh.js#react"></script>
+```
+
+***Example - Enable React Using a Configuration Option***
 ```js
 bbh.babelConfig = { presets: ["es2015", "react"] };
 ```
 
-BBH will automatically import React libraries for you if the `"react"` preset is
-defined, but if you prefer a specific version, you can load it using the
+BBH will automatically import React libraries for you once the `"react"` preset
+is defined, but if you prefer a specific version, you can load it using the
 [`modules`](#modules) configuration option.
 
 See the [Configuration](#configuration) section for more details on module
@@ -780,7 +907,7 @@ system. See the [Separate Scripts](#separate-scripts) section for more details.
 
 ### *How can I develop with BBH from my mobile device?*
 
-If you're using a mobile editor that has a built-in, Webkit-based preview
+If you're using a mobile editor that has a built-in, WebKit-based preview
 option—like [Working Copy](http://workingcopyapp.com/),
 [Textastic](http://www.textasticapp.com/), or
 [Coda](https://panic.com/coda-ios/)—you're ready to go. Just check out or copy
