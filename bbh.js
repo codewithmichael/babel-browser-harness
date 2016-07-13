@@ -43,11 +43,11 @@
           },
           react: {
             exports: 'React',
-            src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.0/react.min.js',
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.1/react.min.js',
           },
           "react-dom": {
             exports: 'ReactDOM',
-            src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.0/react-dom.min.js',
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.1/react-dom.min.js',
           },
         },
         REACT_MODULE_NAMES = ['react', 'react-dom'],
