@@ -20,6 +20,7 @@
         COMMENT_LINE = " " + MESSAGE_PREFIX.toUpperCase() + " BELOW THIS LINE ",
         CROSS_ORIGIN_REGISTRATION_ERROR = "Cross-origin registration rejected",
         GLOBAL_START = Object.keys(window),
+        IGNORE_MODULE_NAMES = [ 'bbh' ],
         DEFAULT_MODULES = [
           {
             name: 'bbh',
@@ -46,6 +47,7 @@
             src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.1/react.min.js',
           },
           "react-dom": {
+            depends: 'react',
             exports: 'ReactDOM',
             src: 'https://cdnjs.cloudflare.com/ajax/libs/react/15.2.1/react-dom.min.js',
           },
@@ -61,7 +63,7 @@
         globalIgnores = [],
         globalLeaks = [],
         modules = [],
-        autoloadedModules = [],
+        autoloadedModules = {},
         executionDelays = [],
         registrations = [],
         allowCrossOriginRegistration = false,
@@ -492,6 +494,7 @@
       return {
         name: moduleName || moduleObject.name || null,
         src: moduleObject.src || null,
+        depends: ensureArray(moduleObject.depends || []),
         exports: ensureArray(moduleObject.exports || []),
         ignores: ensureArray(moduleObject.ignores || []),
         callNoConflict: ensureBoolean(moduleObject.callNoConflict, true),
@@ -508,7 +511,7 @@
         Object.keys(firebugModuleObject)
           .filter(function(key) { return key !== 'src' })
           .forEach(function(key) { moduleObject[key] = firebugModuleObject[key] });
-        autoloadedModules.push(createModuleEntry(FIREBUG_MODULE_NAME, moduleObject));
+        autoloadedModules[FIREBUG_MODULE_NAME] = createModuleEntry(FIREBUG_MODULE_NAME, moduleObject);
       }
 
       // React Preset
@@ -519,7 +522,7 @@
       ) {
         if (!anyModulesAreInModules(REACT_MODULE_NAMES, modules)) {
           REACT_MODULE_NAMES.forEach(function(moduleName) {
-            autoloadedModules.push(createModuleEntry(moduleName, AUTOLOAD_MODULES[moduleName]));
+            autoloadedModules[moduleName] = createModuleEntry(moduleName, AUTOLOAD_MODULES[moduleName]);
           })
         }
       }
@@ -553,19 +556,60 @@
     }
 
     function buildModuleEntries() {
-      var result = [];
-      [modules, autoloadedModules, DEFAULT_MODULES].forEach(function(moduleObjects) {
-        if (Array.isArray(moduleObjects)) {
-          moduleObjects.forEach(function(moduleObject) {
-            result.push(createModuleEntry(moduleObject.name, moduleObject))
-          })
-        } else {
-          Object.keys(moduleObjects).forEach(function(moduleName) {
-            result.push(createModuleEntry(moduleName, moduleObjects[moduleName]));
-          })
+      var sort = loadDependencySorter()({ idProperty: 'name', defaultWeight: -1 }).sort,
+          result;
+
+      // Create module entries
+      result = [modules, autoloadedModules]
+        .reduce(function(result, moduleObjects) {
+          var previousModuleName;
+          if (Array.isArray(moduleObjects)) {
+            // Process array
+            moduleObjects.forEach(function(moduleObject, index) {
+              // Filter out disallowed modules
+              if (!moduleObject.name || ~IGNORE_MODULE_NAMES.indexOf(moduleObject.name)) {
+                return;
+              }
+              var moduleEntry = createModuleEntry(moduleObject.name, moduleObject);
+              if (previousModuleName && !~moduleEntry.depends.indexOf(previousModuleName)) {
+                // Make each item depend on the previous one to retain array
+                // order during the dependency sort.
+                moduleEntry.depends.push(previousModuleName);
+              }
+              result.push(moduleEntry);
+              previousModuleName = moduleEntry.name;
+            })
+          } else {
+            // Process keys
+            Object.keys(moduleObjects).forEach(function(moduleName) {
+              // Filter out disallowed modules
+              if (!moduleName || ~IGNORE_MODULE_NAMES.indexOf(moduleName)) {
+                return;
+              }
+              result.push(createModuleEntry(moduleName, moduleObjects[moduleName]));
+            })
+          }
+          return result;
+        }, []);
+
+      // Sort module entries by dependency
+      result = sort(result);
+
+      // Append default module entries
+      DEFAULT_MODULES.forEach(function(moduleObject) {
+        // If module was already defined, move it to the end of the list to
+        // retain default position.
+        for (var i = result.length - 1; i >= 0; i--) {
+          if (result[i].name === moduleObject.name) {
+            result.push(result.splice(i, 1)[0]);
+            return;
+          }
         }
+        result.push(createModuleEntry(moduleObject.name, moduleObject));
       });
+
       moduleEntries = result;
+console.log(moduleEntries.map(function(_) { return _.name+' '+JSON.stringify(_.depends) }));
     }
 
     function mapGlobals() {
@@ -737,5 +781,13 @@
       var min = 1, max = 999999999;
       return '' + (Math.floor(Math.random() * (max - min + 1)) + min);
     }
+
+    function loadDependencySorter() {
+      return function(define, module) {
+        /*! Dependency Sorter v0.1.0 | (c) Michael Spencer | MIT License | https://github.com/codewithmichael/dependency-sorter */
+        "use strict";!function(e,n,r,t){var i;"function"==typeof define&&define.amd?define(r,[],t):"object"==typeof module&&module.exports?module.exports=t():(i=e[n],e[n]=t(),e[n].noConflict=function(){var r=e[n];return e[n]=i,r})}(this,"DependencySorter","dependency-sorter",function(){function e(e){function i(e){function n(){e=e.map(u.serialize)}function i(){e=e.map(u.deserialize)}function o(){e=r(e)}function f(){t(e)}return n(),o(),f(),i(),e}var u=new n(e);return{sort:i,util:{serialize:function(e){return u.serialize(e)},deserialize:function(e){return u.deserialize(e)},Serializer:n,sortByDepends:r,sortByWeight:t}}}function n(e){function n(e){var n=e[i],r=e[u],f=e[o];return{id:"undefined"!=typeof n&&null!=n?n:e,weight:"number"==typeof r?r:t,depends:f?Array.isArray(f)?f:[f]:[],mark:void 0,node:e}}function r(e){return e.node}var t=e&&"number"==typeof e.defaultWeight?e.defaultWeight:0,i=e&&e.idProperty||"id",u=e&&e.weightProperty||"weight",o=e&&e.dependsProperty||"depends";return{serialize:n,deserialize:r}}function r(e){function n(u){switch(u.mark){case r:throw new Error("Circular dependency encountered: "+u.id);case t:break;default:u.mark=r,e.forEach(function(e){~e.depends.indexOf(u.id)&&n(e)}),u.mark=t,i.unshift(u)}}var r=1,t=2,i=[];return e.forEach(function(e){e.mark||n(e)}),i}function t(e){var n=e;return i(n,1,n.length,function(e,n,r){if(e.weight<0){var t;t=u(r,n,0,function(e,n){return!~e.depends.indexOf(n.id)}),t=u(r,t,n,function(e,n){return e.weight>n.weight})}}),i(n,n.length-2,0,function(e,n,r){if(e.weight>0){var t;t=u(r,n,r.length-1,function(e,n){return!~n.depends.indexOf(e.id)}),t=u(r,t,n,function(e,n){return e.weight<n.weight})}}),n}function i(e,n,r,t,i){if(n!==r){for(var u=r>n?1:-1,o=n;o!==r;o+=u){var f=t(e[o],o,e,n,r,t,i);if("undefined"!=typeof f)return f}return i}}function u(e,n,r,t){if(n!==r){var u=r>n?1:-1;return i(e,n,r,function(e,n,i){var o=n+u,f=i[o];return t(e,f)?(i[o]=e,i[n]=f,o===r?o:void 0):n},n)}}return e.util={Serializer:n,sortByDepends:r,sortByWeight:t},e});
+        return this.DependencySorter.noConflict();
+      }.call({}, undefined, undefined);
+    }
   }
-})();
+}).call(this);
