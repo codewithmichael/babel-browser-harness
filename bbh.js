@@ -25,11 +25,17 @@
           {
             name: 'bbh',
             exports: 'bbh',
+            ignores: 'bbh',
+            callNoConflict: false,
+            deleteFromWindow: false,
           },
           {
             name: 'babel',
             exports: 'Babel',
+            ignores: 'Babel',
             src: 'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.7.7/babel.min.js',
+            callNoConflict: false,
+            deleteFromWindow: false,
           },
           {
             name: 'requirejs',
@@ -39,8 +45,11 @@
         ],
         AUTOLOAD_MODULES = {
           "firebug-lite": {
+            exports: 'Firebug',
             ignores: ['Firebug', 'XMLHttpRequest'],
             src: 'https://getfirebug.com/firebug-lite.js#startOpened',
+            callNoConflict: false,
+            deleteFromWindow: false,
           },
           react: {
             exports: 'React',
