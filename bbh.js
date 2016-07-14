@@ -126,13 +126,14 @@
 
       // Methods
       self.config = config;
-      self.register = register;
       self.enableFirebug = enableFirebug;
+      // DEPRECATED
+      self.register = register;
 
       // Getters
       self.isRegistrationMode = function() { return isRegistrationMode; };
 
-      // Setters
+      // DEPRECATED - Setters
       self.registrationMode = function(bool) { isRegistrationMode = bool !== false; };
       self.allowCrossOriginRegistration = function(bool) { allowCrossOriginRegistration = bool !== false; }
     }
@@ -175,9 +176,12 @@
       }
     }
 
+
+
     //-[ Methods ]--------------------------------------------------------------
 
     function execute() {
+      // DEPRECATED
       importConfig();
 
       if (isRegistrationMode) {
@@ -675,7 +679,7 @@
 
     function loadScriptAndDelayExecution(url, onLoad, onError) {
       if (url) {
-        // Load config details up to this point
+        // DEPRECATED - Load config details up to this point
         importConfig();
 
         executionDelays.push(new Promise(function(resolve, reject) {
