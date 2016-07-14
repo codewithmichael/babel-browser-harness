@@ -168,7 +168,6 @@
           defineExports();
         });
       }
-console.log(JSON.stringify(babelConfig));
     }
 
     function execute() {
