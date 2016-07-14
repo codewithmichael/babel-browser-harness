@@ -81,7 +81,7 @@
         removeModuleScripts = true,
         autoloadReact = true,
         shouldEnableFirebug = false,
-        enabledFirebug = false,
+        enabledFirebugModule,
         appendTarget,
         moduleEntries;
 
@@ -504,6 +504,7 @@
         name: moduleName || moduleObject.name || null,
         src: moduleObject.src || null,
         depends: ensureArray(moduleObject.depends || []),
+        weight: moduleObject.weight,
         exports: ensureArray(moduleObject.exports || []),
         ignores: ensureArray(moduleObject.ignores || []),
         callNoConflict: ensureBoolean(moduleObject.callNoConflict, true),
@@ -513,13 +514,12 @@
 
     function determineAutoloadModules() {
       // Firebug
-      if (enabledFirebug) {
+      if (enabledFirebugModule) {
         // Firebug is loaded immediately, so we don't need the src property
-        var firebugModuleObject = AUTOLOAD_MODULES[FIREBUG_MODULE_NAME],
-            moduleObject = {};
-        Object.keys(firebugModuleObject)
+        var moduleObject = {};
+        Object.keys(enabledFirebugModule)
           .filter(function(key) { return key !== 'src' })
-          .forEach(function(key) { moduleObject[key] = firebugModuleObject[key] });
+          .forEach(function(key) { moduleObject[key] = enabledFirebugModule[key] });
         autoloadedModules[FIREBUG_MODULE_NAME] = createModuleEntry(FIREBUG_MODULE_NAME, moduleObject);
       }
 
@@ -549,36 +549,53 @@
 
     /** Returns true if the moduleName is defined in the modules. */
     function moduleIsInModules(moduleName, modules) {
+      return !!getModuleFromModules(moduleName, modules);
+    }
+
+    /**
+     * Returns the matched module object from the modules, or undefined if not
+     * found.
+     */
+    function getModuleFromModules(moduleName, modules) {
       var result;
       if (Array.isArray(modules)) {
-        result = false;
         for (var i = 0, j = modules.length; i < j; i++) {
           if (modules[i].name === moduleName) {
-            result = true;
+            result = modules[i];
             break;
           }
         }
       } else {
-        result = !!~Object.keys(modules).indexOf(moduleName);
+        result = modules[moduleName];
       }
       return result;
     }
 
     function buildModuleEntries() {
       var sort = loadDependencySorter()({ idProperty: 'name', defaultWeight: -1 }).sort,
+          allowedModules,
           result;
 
+      // Filter out disallowed modules
+      if (Array.isArray(modules)) {
+        allowedModules = modules.filter(allowedModuleFilter);
+      } else {
+        allowedModules = Object.keys(modules).reduce(function(o, moduleName) {
+          var moduleObject = modules[moduleName];
+          if (allowedModuleFilter(moduleObject)) {
+            o[moduleName] = moduleObject;
+          }
+          return o;
+        }, {});
+      }
+
       // Create module entries
-      result = [modules, autoloadedModules]
+      result = [allowedModules, autoloadedModules]
         .reduce(function(result, moduleObjects) {
           var previousModuleName;
           if (Array.isArray(moduleObjects)) {
             // Process array
             moduleObjects.forEach(function(moduleObject, index) {
-              // Filter out disallowed modules
-              if (!moduleObject.name || ~IGNORE_MODULE_NAMES.indexOf(moduleObject.name)) {
-                return;
-              }
               var moduleEntry = createModuleEntry(moduleObject.name, moduleObject);
               if (previousModuleName && !~moduleEntry.depends.indexOf(previousModuleName)) {
                 // Make each item depend on the previous one to retain array
@@ -591,10 +608,6 @@
           } else {
             // Process keys
             Object.keys(moduleObjects).forEach(function(moduleName) {
-              // Filter out disallowed modules
-              if (!moduleName || ~IGNORE_MODULE_NAMES.indexOf(moduleName)) {
-                return;
-              }
               result.push(createModuleEntry(moduleName, moduleObjects[moduleName]));
             })
           }
@@ -618,7 +631,13 @@
       });
 
       moduleEntries = result;
-console.log(moduleEntries.map(function(_) { return _.name+' '+JSON.stringify(_.depends) }));
+
+      function allowedModuleFilter(moduleObject) {
+          return !!moduleObject &&
+                 !!moduleObject.name &&
+                 !~IGNORE_MODULE_NAMES.indexOf(moduleObject.name) &&
+                 (moduleObject.name !== FIREBUG_MODULE_NAME || !enabledFirebugModule);
+      }
     }
 
     function mapGlobals() {
@@ -670,10 +689,23 @@ console.log(moduleEntries.map(function(_) { return _.name+' '+JSON.stringify(_.d
     }
 
     function enableFirebug(url) {
-      if (enabledFirebug) { return }
+      if (enabledFirebugModule) { return }
 
-      enabledFirebug = true;
-      url = url || AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src;
+      // Load config details up to this point
+      importConfig();
+
+      if (url) {
+        enabledFirebugModule = createModuleEntry(FIREBUG_MODULE_NAME, { src: url });
+      } else {
+        enabledFirebugModule = createModuleEntry(FIREBUG_MODULE_NAME, getModuleFromModules(FIREBUG_MODULE_NAME, modules) || AUTOLOAD_MODULES[FIREBUG_MODULE_NAME]);
+        url = enabledFirebugModule.src;
+      }
+
+      if (!url) {
+        enabledFirebugModule = undefined;
+        return;
+      }
+
       loadScriptAndDelayExecution(url, onLoad, onError);
 
       function onLoad(event, resolve, reject) {
@@ -681,7 +713,7 @@ console.log(moduleEntries.map(function(_) { return _.name+' '+JSON.stringify(_.d
       }
 
       function onError(event, resolve, reject) {
-        enabledFirebug = false;
+        enabledFirebugModule = undefined;
         reject(new Error("Unable to load Firebug"));
       }
     }
