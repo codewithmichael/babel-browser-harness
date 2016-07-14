@@ -109,7 +109,7 @@
       enableFirebug();
     }
 
-    //-[ Methods ]--------------------------------------------------------------
+    //-[ Config Methods ]-------------------------------------------------------
 
     function defineExports() {
       // DEPRECATED - Configuration
@@ -165,10 +165,17 @@
           }
 
           // DEPRECATED - Won't be necessary once importConfig() is gone
-          defineExports();
+          self.babelConfig = babelConfig;
+          self.modules = modules;
+          self.removeModuleScripts = removeModuleScripts;
+          self.removeRegisterScripts = removeRegisterScripts;
+          self.autoloadReact = autoloadReact;
+          self.appendTarget = appendTarget;
         });
       }
     }
+
+    //-[ Methods ]--------------------------------------------------------------
 
     function execute() {
       importConfig();
