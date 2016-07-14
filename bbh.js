@@ -112,7 +112,7 @@
     //-[ Methods ]--------------------------------------------------------------
 
     function defineExports() {
-      // Configuration
+      // DEPRECATED - Configuration
       self.babelConfig = babelConfig;
       self.modules = modules;
       self.removeModuleScripts = removeModuleScripts;
@@ -125,6 +125,7 @@
       self.welcome = WELCOME;
 
       // Methods
+      self.config = config;
       self.register = register;
       self.enableFirebug = enableFirebug;
 
@@ -134,6 +135,40 @@
       // Setters
       self.registrationMode = function(bool) { isRegistrationMode = bool !== false; };
       self.allowCrossOriginRegistration = function(bool) { allowCrossOriginRegistration = bool !== false; }
+    }
+
+    // DEPRECATED
+    function importConfig() {
+      babelConfig = self.babelConfig;
+      modules = self.modules;
+      removeModuleScripts = self.removeModuleScripts;
+      removeRegisterScripts = self.removeRegisterScripts;
+      autoloadReact = self.autoloadReact;
+      appendTarget = self.appendTarget;
+    }
+
+    function config(options) {
+      if (options) {
+        Object.keys(options).forEach(function(key) {
+          var value = options[key];
+          switch (key) {
+            case 'allowCrossOriginRegistration': allowCrossOriginRegistration = ensureBoolean(value); break;
+            case 'appendTarget': appendTarget = value; break;
+            case 'autoloadReact': autoloadReact = ensureBoolean(value); break;
+            case 'babelConfig': babelConfig = value || {}; break;
+            case 'enableFirebug': enableFirebug(value); break;
+            case 'modules': modules = value || []; break;
+            case 'register': register(value); break;
+            case 'registrationMode': isRegistrationMode = ensureBoolean(value); break;
+            case 'removeModuleScripts': removeModuleScripts = ensureBoolean(value); break;
+            case 'removeRegisterScripts': removeRegisterScripts = ensureBoolean(value); break;
+          }
+
+          // DEPRECATED - Won't be necessary once importConfig() is gone
+          defineExports();
+        });
+      }
+console.log(JSON.stringify(babelConfig));
     }
 
     function execute() {
@@ -255,17 +290,10 @@
       }
     }
 
-    function importConfig() {
-      babelConfig = self.babelConfig;
-      modules = self.modules;
-      removeModuleScripts = self.removeModuleScripts;
-      removeRegisterScripts = self.removeRegisterScripts;
-      autoloadReact = self.autoloadReact;
-      appendTarget = self.appendTarget;
-    }
-
     function determineAppendTarget() {
-      appendTarget = appendTarget ||
+      appendTarget = (typeof(appendTarget) === 'string')
+                       ? document.querySelector(appendTarget)
+                       : appendTarget ||
                      document.querySelector('#bbh, #BBH, #__bbh, #__BBH') ||
                      document.body;
     }
@@ -312,16 +340,20 @@
      *   messageId (String)- Optional - ID to use for message debugging
      */
     function register(options) {
-      if (Array.isArray(options)) {
-        options.forEach(function(_) { register(_) });
-        return;
+      if (options) {
+        if (Array.isArray(options)) {
+          options.forEach(function(_) { register(_) });
+          return;
+        }
+        if (options.src) {
+          var registration = {
+            src: options.src,
+            timeout: typeof options.timeout === 'number' ? options.timeout : 3000,  // 3 seconds
+            messageId: options.messageId || generateRandomId()
+          };
+          registrations.push(registration);
+        }
       }
-      var registration = {
-        src: options.src,
-        timeout: typeof options.timeout === 'number' ? options.timeout : 3000,  // 3 seconds
-        messageId: options.messageId || generateRandomId()
-      };
-      registrations.push(registration);
     }
 
     function loadRegistrations() {
@@ -618,6 +650,8 @@
 
     function enableFirebug(url) {
       if (enabledFirebug) { return }
+      if (url === false) { return }
+      if (url === true) { url = undefined }
 
       enabledFirebug = true;
       url = url || AUTOLOAD_MODULES[FIREBUG_MODULE_NAME].src;
