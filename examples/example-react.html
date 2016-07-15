@@ -8,35 +8,35 @@ MIT License
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Babel Browser Harness</title>
-    <script src="./bbh.js"></script>
+    <title>BBH ♥ React Example</title>
+
+    <!--------------------------------->
+    <!-- ♦ Use "react" Hash Option ♦ -->
+    <!--------------------------------->
+    <script src="../bbh.js#react"></script>
+
+    <!------------------------------->
+    <!-- ♦ Or Configure Manually ♦ -->
+    <!------------------------------->
+    <script>
+      bbh.config({ babelConfig: { presets: ['es2015', 'react'] }})
+    </script>
+
   </head>
   <body>
     <div id="app">
 
       <!------------------------>
-      <!-- ♦ YOUR CODE HERE ♦ -->
+      <!-- ♦ Your Code Here ♦ -->
       <!------------------------>
-
-      <!-- Example (using React) -->
       <script type="text/babel" name="react-example">
         import React from 'react'
         import { render } from 'react-dom'
-        import { welcome } from './bbh'
+        import { welcome } from 'bbh'
 
         render(<div>{ welcome }</div>, document.getElementById('app'))
       </script>
 
     </div>
-
-
-    <!--------------------------------->
-    <!-- ♥ CONFIGURATION FOR REACT ♥ -->
-    <!--------------------------------->
-
-    <script>
-      bbh.babelConfig = { presets: ['es2015', 'react'] };
-    </script>
-
   </body>
 </html>
